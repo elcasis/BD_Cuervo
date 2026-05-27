@@ -681,16 +681,77 @@ function clearP2(){
 function checkPhase2(){
   if(gs.p2Checked) return;gs.p2Checked=true;document.getElementById('btnClearP2').disabled=true;
   const prob=PROBLEMS[gs.idx];let correct=0,wrong=0,errors=[];
+
+  // Build a map: nodeId -> which entity it belongs to (following edges)
+  // For each node, find its parent entity by traversing edges
+  const nodeMap={};prob.diagram.nodes.forEach(n=>nodeMap[n.id]=n);
+  const ATTR_TYPES=['attr','deriv','multi'];
+
+  // For each zone, determine if the placed term is acceptable
+  // Rule: entities, weak entities, relations must match exactly.
+  // Attributes (attr/deriv/multi): accept if the placed term is an attr-type
+  // AND its node connects to the same parent entity as the expected term's node.
+  function getParentEntityId(nodeId){
+    // Find which entity node connects directly to this attribute node
+    for(const edge of prob.diagram.edges){
+      if(edge.to===nodeId){
+        const parentNode=nodeMap[edge.from];
+        if(parentNode&&(parentNode.type==='entity'||parentNode.type==='weak')) return edge.from;
+        // Could be relation connects to attr — check parent of parent
+        if(parentNode&&parentNode.type==='relation'){
+          for(const e2 of prob.diagram.edges){
+            if(e2.to===edge.from){
+              const gp=nodeMap[e2.from];
+              if(gp&&(gp.type==='entity'||gp.type==='weak')) return e2.from;
+            }
+          }
+        }
+      }
+      if(edge.from===nodeId){
+        const parentNode=nodeMap[edge.to];
+        if(parentNode&&(parentNode.type==='entity'||parentNode.type==='weak')) return edge.to;
+      }
+    }
+    return null;
+  }
+
   prob.diagram.zones.forEach(zone=>{
-    const placed=gs.p2Placements[zone.id];const ok=placed===zone.termId;
+    const placed=gs.p2Placements[zone.id];
+    const zoneNode=nodeMap[zone.nodeId];
+    let ok=false;
+
+    if(ATTR_TYPES.includes(zoneNode?.type)){
+      // Find placed term's zone to get its node
+      const placedZone=prob.diagram.zones.find(z=>z.termId===placed);
+      const placedNode=placedZone?nodeMap[placedZone.nodeId]:null;
+      // Accept if: placed is an attr-type node AND connects to same parent entity
+      if(placedNode&&ATTR_TYPES.includes(placedNode.type)){
+        const expectedParent=getParentEntityId(zone.nodeId);
+        const placedParent=getParentEntityId(placedZone.nodeId);
+        ok=(expectedParent&&placedParent&&expectedParent===placedParent);
+      }
+    } else {
+      // Entities, weak entities, relations: must match exactly
+      ok=placed===zone.termId;
+    }
+
     const el=document.getElementById('dz_'+zone.id);if(el) el.classList.add(ok?'correct':'wrong');
-    if(ok){correct++;gs.totalCorrect++;}else{wrong++;gs.totalWrong++;errors.push(`${zone.termId}: "${placed||'?'}"`);}
+    if(ok){correct++;gs.totalCorrect++;}else{wrong++;gs.totalWrong++;
+      if(!ATTR_TYPES.includes(zoneNode?.type)) errors.push(`${zone.termId}: colocaste "${placed||'?'}"`);}
   });
+
   const pts=correct*10;gs.score+=pts;document.getElementById('scoreVal').textContent=gs.score;
   const fb=document.getElementById('p2Feedback');
   fb.className='feedback-panel show '+(wrong===0?'feedback-correct':'feedback-wrong');
   let html=`<div class="feedback-title">${wrong===0?`✅ ¡DIAGRAMA PERFECTO! +${pts} pts`:`⚠ ${correct}/${prob.diagram.zones.length} correctas — +${pts} pts`}</div>`;
-  if(errors.length){html+='<div class="feedback-items">';errors.slice(0,4).forEach(e=>html+=`<span class="fb-item fb-wrong">${e}</span>`);html+='</div>';}
+  if(wrong>0){
+    const attrWrong=prob.diagram.zones.filter(zone=>{
+      const placed=gs.p2Placements[zone.id];const zn=nodeMap[zone.nodeId];
+      return ATTR_TYPES.includes(zn?.type)&&placed!==zone.termId;
+    });
+    if(attrWrong.length) html+=`<div class="fb-hint">⚠ Algunos atributos están en posiciones incorrectas — los atributos deben ir en el hueco de su propia entidad, no intercambiados con otros atributos.</div>`;
+    if(errors.length){html+='<div class="feedback-items">';errors.slice(0,4).forEach(e=>html+=`<span class="fb-item fb-wrong">${e}</span>`);html+='</div>';}
+  }
   fb.innerHTML=html;
   if(wrong===0) confetti();
   document.getElementById('btnCheckP2').textContent='→ PASAR A FASE 3';document.getElementById('btnCheckP2').onclick=goPhase3;document.getElementById('btnCheckP2').disabled=false;
