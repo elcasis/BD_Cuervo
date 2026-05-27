@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ER-CUERVO · Diagrama Entidad-Relación</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080814;--bg2:#0e0e22;--panel:#121230;--border:#1e1e48;
+  --accent:#00e5ff;--accent2:#ff4dff;--accent3:#b3ff4d;
+  --warn:#ffcc00;--red:#ff3355;--text:#ccd0f0;--muted:#4a4a80;--white:#fff;
+  --crow:#8855ff;--crow2:rgba(136,85,255,0.12);--crow-border:#aa77ff;--crow-text:#ddbdff;
+  --col-entity:#1a3a6a;--col-entity-b:#4da6ff;--col-entity-t:#a8d4ff;
+  --col-weak:#1a1a4a;--col-weak-b:#8888ff;--col-weak-t:#ccccff;
+  --col-rel:#2a1a4a;--col-rel-b:#aa66ff;--col-rel-t:#ddaaff;
+  --col-attr:#0d2a1a;--col-attr-b:#44cc88;--col-attr-t:#aaffcc;
+  --col-deriv:#2a2a00;--col-deriv-b:#ffe033;--col-deriv-t:#fff3a0;
+  --col-multi:#1a1a3a;--col-multi-b:#4488ff;--col-multi-t:#aaccff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(136,85,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(136,85,255,0.025) 1px,transparent 1px);
+  background-size:44px 44px;}
+.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:14px 14px 60px;}
+.screen{display:none;}.screen.active{display:block;animation:fadein 0.4s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.crow-wrap{text-align:center;padding:10px 0 4px;}
+.game-logo{font-family:'Press Start 2P',monospace;font-size:clamp(16px,4vw,28px);color:var(--crow-border);
+  text-shadow:0 0 20px var(--crow-border),0 0 50px rgba(136,85,255,0.4);letter-spacing:3px;text-align:center;padding:8px 0 4px;}
+.game-sub{font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:16px;}
+.start-content{text-align:center;padding:10px 0 20px;}
+.theory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:16px 0 22px;text-align:left;}
+.theory-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.theory-card h4{font-family:'Press Start 2P',monospace;font-size:8px;margin-bottom:8px;letter-spacing:1px;}
+.theory-card p{font-size:13px;color:var(--muted);line-height:1.5;}
+.tc-e{border-color:var(--col-entity-b);}.tc-e h4{color:var(--col-entity-t);}
+.tc-w{border-color:var(--col-weak-b);}.tc-w h4{color:var(--col-weak-t);}
+.tc-r{border-color:var(--col-rel-b);}.tc-r h4{color:var(--col-rel-t);}
+.tc-a{border-color:var(--col-attr-b);}.tc-a h4{color:var(--col-attr-t);}
+.tc-d{border-color:var(--col-deriv-b);}.tc-d h4{color:var(--col-deriv-t);}
+.tc-m{border-color:var(--col-multi-b);}.tc-m h4{color:var(--col-multi-t);}
+.hud{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
+.hud-score{font-family:'Press Start 2P',monospace;font-size:15px;color:var(--accent3);}
+.hud-label{font-size:8px;color:var(--muted);font-family:'Press Start 2P',monospace;letter-spacing:1px;display:block;margin-bottom:2px;}
+.hud-prob{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent2);}
+.hud-phase{font-size:8px;font-family:'Press Start 2P',monospace;padding:4px 10px;border-radius:4px;background:var(--crow2);border:1px solid rgba(136,85,255,0.4);color:var(--crow-border);}
+.prog-bar-wrap{flex:1;min-width:80px;}
+.prog-bar-bg{background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--crow-border),var(--accent2));border-radius:4px;transition:width 0.4s ease;}
+.stepper{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.step{font-family:'Press Start 2P',monospace;font-size:7px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--bg2);}
+.step.active{border-color:var(--crow-border);color:var(--crow-text);background:var(--crow2);}
+.step.done{border-color:var(--accent3);color:var(--accent3);background:rgba(179,255,77,0.08);}
+.step-sep{color:var(--muted);font-size:13px;}
+.problem-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;position:relative;overflow:hidden;}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--crow-border),var(--accent2),var(--accent));}
+.problem-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--accent2);letter-spacing:2px;margin-bottom:8px;}
+.problem-text{font-size:15px;font-weight:700;color:var(--white);line-height:1.8;}
+.instr-box{background:var(--crow2);border:1px solid rgba(136,85,255,0.28);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.6;}
+.instr-box strong{color:var(--crow-border);}
+.p1-token-area{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.p1-token{padding:7px 14px;border-radius:8px;border:2px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;font-weight:800;cursor:pointer;transition:all 0.15s;user-select:none;}
+.p1-token:hover{border-color:var(--crow-border);color:var(--crow-text);}
+.p1-token.selected{border-color:var(--crow-border);background:var(--crow2);color:var(--crow-text);box-shadow:0 0 10px rgba(136,85,255,0.3);}
+.p1-token.classified{opacity:0.45;cursor:default;pointer-events:none;}
+.type-picker{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.type-picker-label{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--muted);width:100%;margin-bottom:4px;}
+.type-btn{padding:7px 12px;border-radius:8px;border:2px solid;font-size:12px;font-weight:800;cursor:pointer;transition:all 0.15s;background:transparent;}
+.type-btn:hover{opacity:0.8;}
+.tb-entity{border-color:var(--col-entity-b);color:var(--col-entity-t);}
+.tb-weak{border-color:var(--col-weak-b);color:var(--col-weak-t);}
+.tb-rel{border-color:var(--col-rel-b);color:var(--col-rel-t);}
+.tb-attr{border-color:var(--col-attr-b);color:var(--col-attr-t);}
+.tb-deriv{border-color:var(--col-deriv-b);color:var(--col-deriv-t);}
+.tb-multi{border-color:var(--col-multi-b);color:var(--col-multi-t);}
+.classified-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.cl-badge{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:800;border:1px solid;}
+.cl-entity{background:rgba(26,58,106,0.5);border-color:var(--col-entity-b);color:var(--col-entity-t);}
+.cl-weak{background:rgba(26,26,74,0.5);border-color:var(--col-weak-b);color:var(--col-weak-t);}
+.cl-relation{background:rgba(42,26,74,0.5);border-color:var(--col-rel-b);color:var(--col-rel-t);}
+.cl-attr{background:rgba(13,42,26,0.5);border-color:var(--col-attr-b);color:var(--col-attr-t);}
+.cl-deriv{background:rgba(42,42,0,0.5);border-color:var(--col-deriv-b);color:var(--col-deriv-t);}
+.cl-multi{background:rgba(26,26,58,0.5);border-color:var(--col-multi-b);color:var(--col-multi-t);}
+.diagram-workspace{display:flex;gap:12px;flex-wrap:wrap;}
+.palette{width:155px;flex-shrink:0;}
+.palette-title{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;}
+.palette-items{display:flex;flex-direction:column;gap:7px;}
+.pal-tok{padding:7px 10px;border-radius:7px;font-size:12px;font-weight:800;cursor:grab;border:2px solid;transition:all 0.15s;user-select:none;}
+.pal-tok:hover{transform:translateX(3px);}
+.pal-tok.placed{opacity:0.3;pointer-events:none;}
+.pt-entity{background:var(--col-entity);border-color:var(--col-entity-b);color:var(--col-entity-t);}
+.pt-weak{background:var(--col-weak);border-color:var(--col-weak-b);color:var(--col-weak-t);outline:2px solid var(--col-weak-b);outline-offset:2px;}
+.pt-rel{background:var(--col-rel);border-color:var(--col-rel-b);color:var(--col-rel-t);}
+.pt-attr{background:var(--col-attr);border-color:var(--col-attr-b);color:var(--col-attr-t);}
+.pt-deriv{background:var(--col-deriv);border-color:var(--col-deriv-b);color:var(--col-deriv-t);border-style:dashed;}
+.pt-multi{background:var(--col-multi);border-color:var(--col-multi-b);color:var(--col-multi-t);outline:2px solid var(--col-multi-b);outline-offset:2px;}
+.canvas-wrap{flex:1;min-width:280px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;position:relative;overflow:hidden;}
+.diagram-svg{width:100%;display:block;}
+.drop-zone{position:absolute;border:2px dashed rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.18);font-weight:800;transition:all 0.2s;cursor:pointer;overflow:hidden;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:rgba(136,85,255,0.55);background:rgba(136,85,255,0.07);color:rgba(136,85,255,0.55);}
+.drop-zone.filled{border-style:solid;cursor:default;}
+.dz-entity{background:var(--col-entity);border-color:var(--col-entity-b);}
+.dz-weak{background:var(--col-weak);border-color:var(--col-weak-b);outline:2px solid var(--col-weak-b);outline-offset:2px;}
+.dz-rel{background:var(--col-rel);border-color:var(--col-rel-b);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);}
+.dz-attr{background:var(--col-attr);border-color:var(--col-attr-b);border-radius:50%;}
+.dz-deriv{background:var(--col-deriv);border-color:var(--col-deriv-b);border-style:dashed;border-radius:50%;}
+.dz-multi{background:var(--col-multi);border-color:var(--col-multi-b);border-radius:50%;outline:2px solid var(--col-multi-b);outline-offset:2px;}
+.zone-label{font-size:9px;font-weight:800;text-align:center;line-height:1.2;pointer-events:none;padding:2px;}
+.dz-entity .zone-label,.dz-weak .zone-label{color:var(--col-entity-t);}
+.dz-rel .zone-label{color:var(--col-rel-t);}
+.dz-attr .zone-label,.dz-deriv .zone-label,.dz-multi .zone-label{color:var(--col-attr-t);}
+.drop-zone.correct{animation:zone-ok 0.5s ease;}
+.drop-zone.wrong{animation:zone-bad 0.5s ease;}
+@keyframes zone-ok{0%,100%{box-shadow:none}50%{box-shadow:0 0 20px rgba(68,221,136,0.6)}}
+@keyframes zone-bad{0%,100%{box-shadow:none}50%{box-shadow:0 0 20px rgba(255,51,85,0.6)}}
+.crow-palette{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.crow-palette-label{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--muted);width:100%;margin-bottom:4px;}
+.crow-chip{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid;transition:all 0.15s;user-select:none;}
+.crow-chip:hover{opacity:0.85;}
+.crow-chip.sel{transform:scale(1.1);box-shadow:0 0 14px currentColor;}
+.cc-one{background:rgba(0,229,255,0.1);border-color:var(--accent);color:var(--accent);}
+.cc-zero1{background:rgba(179,255,77,0.1);border-color:var(--accent3);color:var(--accent3);}
+.cc-many{background:rgba(255,77,255,0.1);border-color:var(--accent2);color:var(--accent2);}
+.cc-zero_many{background:rgba(255,204,0,0.1);border-color:var(--warn);color:var(--warn);}
+.crow-diagram-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;position:relative;margin-bottom:12px;}
+.crow-diagram-wrap svg{width:100%;display:block;}
+.cf-slot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10;}
+.cf-slot-inner{width:56px;height:32px;border-radius:6px;border:2px dashed rgba(255,204,0,0.35);background:rgba(255,204,0,0.04);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;font-family:'Press Start 2P',monospace;color:rgba(255,204,0,0.35);transition:all 0.2s;}
+.cf-slot-inner:hover{border-color:var(--warn);background:rgba(255,204,0,0.1);color:var(--warn);}
+.cf-slot-inner.filled-one{border-style:solid;border-color:var(--accent);background:rgba(0,229,255,0.12);color:var(--accent);}
+.cf-slot-inner.filled-zero1{border-style:solid;border-color:var(--accent3);background:rgba(179,255,77,0.12);color:var(--accent3);}
+.cf-slot-inner.filled-many{border-style:solid;border-color:var(--accent2);background:rgba(255,77,255,0.12);color:var(--accent2);}
+.cf-slot-inner.filled-zero_many{border-style:solid;border-color:var(--warn);background:rgba(255,204,0,0.12);color:var(--warn);}
+.cf-slot-inner.cf-correct{animation:zone-ok 0.5s ease;}
+.cf-slot-inner.cf-wrong{animation:zone-bad 0.5s ease;}
+.feedback-panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-top:10px;display:none;animation:fadein 0.3s ease;}
+.feedback-panel.show{display:block;}
+.feedback-title{font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:8px;}
+.feedback-correct .feedback-title{color:var(--accent3);}
+.feedback-wrong .feedback-title{color:var(--warn);}
+.feedback-items{display:flex;flex-wrap:wrap;gap:6px;}
+.fb-item{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px;border:1px solid;}
+.fb-wrong{background:rgba(255,51,85,0.1);border-color:var(--red);color:#ff8899;}
+.fb-hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6;}
+.btn-main{display:block;width:100%;margin-top:10px;padding:13px;background:transparent;border:2px solid var(--crow-border);border-radius:8px;color:var(--crow-text);font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;letter-spacing:2px;transition:all 0.2s;box-shadow:0 0 10px rgba(136,85,255,0.12);}
+.btn-main:hover{background:var(--crow2);box-shadow:0 0 22px rgba(136,85,255,0.3);transform:translateY(-1px);}
+.btn-main:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.btn-row .btn-main{flex:2;min-width:160px;margin-top:0;}
+.btn-warn{border-color:var(--warn);color:var(--warn);flex:1;min-width:100px;margin-top:0;}
+.btn-warn:hover{background:rgba(255,204,0,0.08);}
+.btn-skip{display:block;width:100%;margin-top:6px;padding:8px;background:transparent;border:1px solid var(--muted);border-radius:6px;color:var(--muted);font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;letter-spacing:1px;transition:all 0.15s;}
+.btn-skip:hover{border-color:var(--text);color:var(--text);}
+.results-content{text-align:center;padding:10px 0;}
+.result-emoji{font-size:60px;margin:10px 0;}
+.result-title{font-family:'Press Start 2P',monospace;font-size:clamp(12px,3vw,19px);margin-bottom:12px;color:var(--accent3);}
+.result-score-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin:14px 0;}
+.result-score-val{font-family:'Press Start 2P',monospace;font-size:clamp(30px,8vw,50px);color:var(--accent2);text-shadow:0 0 20px var(--accent2);display:block;}
+.result-score-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--muted);letter-spacing:3px;display:block;margin-bottom:8px;}
+.result-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0;}
+.rs-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 18px;text-align:center;}
+.rs-val{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--accent);display:block;}
+.rs-lbl{font-size:11px;color:var(--muted);margin-top:4px;display:block;}
+.confetti-piece{position:fixed;top:-10px;border-radius:2px;z-index:999;animation:conf-fall var(--dur) var(--delay) ease-in forwards;}
+@keyframes conf-fall{to{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="screen active" id="startScreen">
+  <div class="crow-wrap">
+    <svg viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg" style="max-width:240px;margin:0 auto;display:block;filter:drop-shadow(0 0 18px rgba(136,85,255,0.5))">
+      <ellipse cx="130" cy="112" rx="52" ry="34" fill="#1a0a2e" stroke="#8855ff" stroke-width="2"/>
+      <ellipse cx="170" cy="80" rx="28" ry="24" fill="#1a0a2e" stroke="#8855ff" stroke-width="2"/>
+      <circle cx="180" cy="74" r="5" fill="#8855ff"/><circle cx="181" cy="73" r="2" fill="#fff"/>
+      <polygon points="198,76 216,82 198,86" fill="#aa77ff" stroke="#8855ff" stroke-width="1"/>
+      <path d="M100,107 Q60,76 40,112 Q70,120 100,117" fill="#220a44" stroke="#8855ff" stroke-width="1.5"/>
+      <path d="M160,107 Q196,78 216,110 Q188,122 160,120" fill="#220a44" stroke="#8855ff" stroke-width="1.5"/>
+      <path d="M82,132 Q70,157 55,167 M82,134 Q75,160 78,174 M82,136 Q91,162 101,172" stroke="#8855ff" stroke-width="2" fill="none"/>
+      <line x1="118" y1="144" x2="108" y2="164" stroke="#8855ff" stroke-width="2"/>
+      <line x1="108" y1="164" x2="95" y2="172" stroke="#8855ff" stroke-width="1.5"/>
+      <line x1="108" y1="164" x2="104" y2="176" stroke="#8855ff" stroke-width="1.5"/>
+      <line x1="108" y1="164" x2="115" y2="174" stroke="#8855ff" stroke-width="1.5"/>
+      <line x1="138" y1="144" x2="148" y2="164" stroke="#8855ff" stroke-width="2"/>
+      <line x1="148" y1="164" x2="135" y2="172" stroke="#8855ff" stroke-width="1.5"/>
+      <line x1="148" y1="164" x2="148" y2="176" stroke="#8855ff" stroke-width="1.5"/>
+      <line x1="148" y1="164" x2="161" y2="172" stroke="#8855ff" stroke-width="1.5"/>
+      <text x="16" y="50" font-size="16" fill="#aa77ff" opacity="0.6" font-family="monospace">||</text>
+      <text x="220" y="44" font-size="16" fill="#00e5ff" opacity="0.6" font-family="monospace">&gt;|</text>
+      <text x="8" y="158" font-size="13" fill="#b3ff4d" opacity="0.5" font-family="monospace">O|</text>
+      <text x="224" y="158" font-size="13" fill="#ff4dff" opacity="0.5" font-family="monospace">O&gt;</text>
+    </svg>
+  </div>
+  <div class="game-logo">ER-CUERVO</div>
+  <div class="game-sub">Entidad-Relación · Pata de Cuervo</div>
+  <div class="start-content">
+    <div style="font-size:14px;color:var(--muted);max-width:580px;margin:0 auto 16px;line-height:1.75;">
+      <strong style="color:var(--accent)">Fase 1</strong> Clasifica términos ·
+      <strong style="color:var(--accent3)">Fase 2</strong> Construye el diagrama E-R ·
+      <strong style="color:var(--crow-border)">Fase 3</strong> Coloca los símbolos de pata de cuervo
+    </div>
+    <div class="theory-grid">
+      <div class="theory-card tc-e"><h4>▣ Entidad</h4><p>Objeto con existencia propia. Rectángulo simple.</p></div>
+      <div class="theory-card tc-w"><h4>▣▣ Entidad Débil</h4><p>Depende de otra para identificarse. Doble borde.</p></div>
+      <div class="theory-card tc-r"><h4>◆ Relación</h4><p>Asociación entre entidades. Rombo.</p></div>
+      <div class="theory-card tc-a"><h4>● Atributo</h4><p>Propiedad de una entidad. Elipse sólida.</p></div>
+      <div class="theory-card tc-d"><h4>◌ Derivado</h4><p>Se calcula desde otro dato. Elipse punteada.</p></div>
+      <div class="theory-card tc-m"><h4>◎ Multivalor</h4><p>Puede tener varios valores. Elipse doble borde.</p></div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;max-width:580px;margin:0 auto 20px;text-align:left;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--crow-border);margin-bottom:10px;letter-spacing:1px;">🦅 SÍMBOLOS PATA DE CUERVO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;font-weight:700;">
+        <div><span style="color:var(--accent);font-family:monospace;font-size:16px;font-weight:900;">||</span> &nbsp;Uno exacto (obligatorio)</div>
+        <div><span style="color:var(--accent3);font-family:monospace;font-size:16px;font-weight:900;">O|</span> &nbsp;Cero o uno (opcional)</div>
+        <div><span style="color:var(--accent2);font-family:monospace;font-size:16px;font-weight:900;">≫|</span> &nbsp;Uno o muchos</div>
+        <div><span style="color:var(--warn);font-family:monospace;font-size:16px;font-weight:900;">O≫</span> &nbsp;Cero o muchos</div>
+      </div>
+    </div>
+    <button class="btn-main" id="btnStart" style="max-width:340px;margin:0 auto;">▶ EMPEZAR (30 EJERCICIOS)</button>
+  </div>
+</div>
+
+<div class="screen" id="gameScreen">
+  <div class="hud">
+    <div><span class="hud-label">PUNTOS</span><span class="hud-score" id="scoreVal">0</span></div>
+    <div><span class="hud-label">EJERCICIO</span><span class="hud-prob" id="probNum">1/30</span></div>
+    <div class="prog-bar-wrap">
+      <span class="hud-label">PROGRESO</span>
+      <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div class="hud-phase" id="phaseLabel">FASE 1</div>
+    <button onclick="skipProblem()" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;padding:5px 10px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">⟶ SALTAR</button>
+  </div>
+  <div class="stepper">
+    <div class="step active" id="st1">1 IDENTIFICAR</div><span class="step-sep">→</span>
+    <div class="step" id="st2">2 DIAGRAMA E-R</div><span class="step-sep">→</span>
+    <div class="step" id="st3">3 PATA DE CUERVO</div>
+  </div>
+  <div class="problem-card">
+    <div class="problem-label" id="probLabel">EJERCICIO 1</div>
+    <div class="problem-text" id="probText"></div>
+  </div>
+
+  <div id="phase1Content">
+    <div class="instr-box"><strong>FASE 1 — IDENTIFICAR:</strong> Toca un término resaltado y clasifícalo con los botones.</div>
+    <div class="p1-token-area" id="p1TokenArea"></div>
+    <div class="type-picker" id="typePicker">
+      <div class="type-picker-label">Clasificar como:</div>
+      <button class="type-btn tb-entity" onclick="classifyAs('entity')">▣ Entidad</button>
+      <button class="type-btn tb-weak" onclick="classifyAs('weak')">▣▣ E.Débil</button>
+      <button class="type-btn tb-rel" onclick="classifyAs('relation')">◆ Relación</button>
+      <button class="type-btn tb-attr" onclick="classifyAs('attr')">● Atributo</button>
+      <button class="type-btn tb-deriv" onclick="classifyAs('deriv')">◌ Derivado</button>
+      <button class="type-btn tb-multi" onclick="classifyAs('multi')">◎ Multivalor</button>
+    </div>
+    <div class="classified-list" id="classifiedList"></div>
+    <div class="feedback-panel" id="p1Feedback"></div>
+    <button class="btn-main" id="btnCheckP1" disabled onclick="checkPhase1()">✔ COMPROBAR FASE 1</button>
+    <button class="btn-skip" onclick="goPhase2()">⏭ SALTAR A FASE 2</button>
+  </div>
+
+  <div id="phase2Content" style="display:none;">
+    <div class="instr-box"><strong>FASE 2 — DIAGRAMA E-R:</strong> Selecciona un elemento de la paleta y haz clic en el hueco del diagrama.</div>
+    <div class="diagram-workspace">
+      <div class="palette"><div class="palette-title">ELEMENTOS</div><div class="palette-items" id="paletteItems"></div></div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg class="diagram-svg" id="diagramSvg" viewBox="0 0 560 400" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="dropZonesContainer"></div>
+      </div>
+    </div>
+    <div class="feedback-panel" id="p2Feedback"></div>
+    <div class="btn-row">
+      <button class="btn-main" id="btnCheckP2" disabled onclick="checkPhase2()">✔ COMPROBAR DIAGRAMA</button>
+      <button class="btn-main btn-warn" id="btnClearP2" onclick="clearP2()">🗑 LIMPIAR</button>
+    </div>
+    <button class="btn-skip" onclick="goPhase3()">⏭ SALTAR A FASE 3</button>
+  </div>
+
+  <div id="phase3Content" style="display:none;">
+    <div class="instr-box"><strong>FASE 3 — PATA DE CUERVO:</strong> Selecciona un símbolo y haz clic en los extremos <span style="color:var(--warn)">?</span> para colocarlo.</div>
+    <div class="crow-palette">
+      <div class="crow-palette-label">Símbolo a colocar:</div>
+      <div class="crow-chip cc-one" id="cc_one" onclick="pickCrow('one')">|| Uno</div>
+      <div class="crow-chip cc-zero1" id="cc_zero1" onclick="pickCrow('zero1')">O| Cero/Uno</div>
+      <div class="crow-chip cc-many" id="cc_many" onclick="pickCrow('many')">≫| Uno/Muchos</div>
+      <div class="crow-chip cc-zero_many" id="cc_zero_many" onclick="pickCrow('zero_many')">O≫ Cero/Muchos</div>
+    </div>
+    <div class="crow-diagram-wrap" id="crowDiagramWrap">
+      <svg id="crowSvg" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+      <div id="crowSlotsContainer"></div>
+    </div>
+    <div class="feedback-panel" id="p3Feedback"></div>
+    <div class="btn-row">
+      <button class="btn-main" id="btnCheckP3" disabled onclick="checkPhase3()">✔ COMPROBAR PATA DE CUERVO</button>
+      <button class="btn-main btn-warn" id="btnClearP3" onclick="clearP3()">🗑 LIMPIAR</button>
+    </div>
+    <button class="btn-skip" onclick="nextProblem()">⏭ SIGUIENTE EJERCICIO</button>
+  </div>
+</div>
+
+<div class="screen" id="resultsScreen">
+  <div class="results-content">
+    <div class="result-emoji" id="resEmoji">🏆</div>
+    <div class="result-title" id="resTitle">¡MISIÓN COMPLETADA!</div>
+    <div class="result-score-box">
+      <span class="result-score-label">PUNTUACIÓN FINAL</span>
+      <span class="result-score-val" id="resScore">0</span>
+      <div id="resGrade" style="margin-top:10px;"></div>
+    </div>
+    <div class="result-stats">
+      <div class="rs-card"><span class="rs-val" id="rsCorrect">0</span><span class="rs-lbl">✅ Correctas</span></div>
+      <div class="rs-card"><span class="rs-val" id="rsWrong">0</span><span class="rs-lbl">❌ Incorrectas</span></div>
+      <div class="rs-card"><span class="rs-val">30</span><span class="rs-lbl">📋 Ejercicios</span></div>
+    </div>
+    <button class="btn-main" id="btnRestart" style="max-width:340px;margin:0 auto;">🔄 JUGAR DE NUEVO</button>
+    <button class="btn-skip" id="btnMenu" style="max-width:340px;display:block;margin:6px auto 0;">🏠 MENÚ</button>
+  </div>
+</div>
+</div>
+<script>
+const CROW_SYMBOLS={one:{label:'||',title:'Uno'},zero1:{label:'O|',title:'Cero o uno'},many:{label:'≫|',title:'Uno o muchos'},zero_many:{label:'O≫',title:'Cero o muchos'}};
+
+const PROBLEMS=[
+// ─── 1-5 FÁCIL: entidad, relación, atributo ───
+{id:1,title:"Biblioteca",text:"Una BIBLIOTECA tiene LIBROS. De cada libro se conoce su TÍTULO y su ISBN. Los libros son PRESTADOS a SOCIOS. El socio tiene un NOMBRE y un NUM_SOCIO.",
+terms:[{id:"biblioteca",word:"BIBLIOTECA",type:"entity"},{id:"libro",word:"LIBRO",type:"entity"},{id:"titulo",word:"TÍTULO",type:"attr"},{id:"isbn",word:"ISBN",type:"attr"},{id:"prestado",word:"PRESTADO",type:"relation"},{id:"socio",word:"SOCIO",type:"entity"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"num_socio",word:"NUM_SOCIO",type:"attr"}],
+diagram:{nodes:[{id:"e_bib",label:"BIBLIOTECA",type:"entity",x:20,y:170,w:130,h:44},{id:"e_lib",label:"LIBRO",type:"entity",x:220,y:80,w:100,h:44},{id:"a_tit",label:"TÍTULO",type:"attr",x:350,y:30,w:88,h:36},{id:"a_isbn",label:"ISBN",type:"attr",x:350,y:100,w:78,h:36},{id:"r_pre",label:"PRESTADO",type:"relation",x:220,y:170,w:110,h:44},{id:"e_soc",label:"SOCIO",type:"entity",x:220,y:270,w:100,h:44},{id:"a_nom",label:"NOMBRE",type:"attr",x:350,y:250,w:88,h:36},{id:"a_ns",label:"NUM_SOCIO",type:"attr",x:350,y:310,w:100,h:36}],
+edges:[{from:"e_bib",to:"r_pre"},{from:"r_pre",to:"e_lib"},{from:"r_pre",to:"e_soc"},{from:"e_lib",to:"a_tit"},{from:"e_lib",to:"a_isbn"},{from:"e_soc",to:"a_nom"},{from:"e_soc",to:"a_ns"}],
+zones:[{id:"z_bib",nodeId:"e_bib",termId:"BIBLIOTECA"},{id:"z_lib",nodeId:"e_lib",termId:"LIBRO"},{id:"z_tit",nodeId:"a_tit",termId:"TÍTULO"},{id:"z_isbn",nodeId:"a_isbn",termId:"ISBN"},{id:"z_pre",nodeId:"r_pre",termId:"PRESTADO"},{id:"z_soc",nodeId:"e_soc",termId:"SOCIO"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_ns",nodeId:"a_ns",termId:"NUM_SOCIO"}]},
+crowfoot:{entities:[{id:"ce_bib",label:"BIBLIOTECA",x:50,y:118,w:130,h:44},{id:"ce_lib",label:"LIBRO",x:380,y:118,w:100,h:44}],relations:[{id:"cr_pre",label:"PRESTADO",leftId:"ce_bib",rightId:"ce_lib",slots:[{id:"sl1",entityId:"ce_bib",side:"right",correct:"one"},{id:"sl2",entityId:"ce_lib",side:"left",correct:"zero_many"}]}]}},
+
+{id:2,title:"Empresa y Empleados",text:"Una EMPRESA tiene EMPLEADOS. Cada empleado tiene un DNI, NOMBRE y SALARIO. Los empleados trabajan en DEPARTAMENTOS que tienen un COD_DEP y NOMBRE_DEP.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"empleado",word:"EMPLEADO",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"salario",word:"SALARIO",type:"attr"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"departamento",word:"DEPARTAMENTO",type:"entity"},{id:"cod_dep",word:"COD_DEP",type:"attr"},{id:"nombre_dep",word:"NOMBRE_DEP",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPLEADO",type:"entity",x:30,y:160,w:120,h:44},{id:"a_dni",label:"DNI",type:"attr",x:30,y:55,w:70,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:30,y:285,w:80,h:36},{id:"a_sal",label:"SALARIO",type:"attr",x:160,y:55,w:80,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:220,y:160,w:100,h:44},{id:"e_dep",label:"DEPARTAMENTO",type:"entity",x:380,y:160,w:140,h:44},{id:"a_cod",label:"COD_DEP",type:"attr",x:400,y:55,w:90,h:36},{id:"a_ndp",label:"NOMBRE_DEP",type:"attr",x:400,y:285,w:110,h:36}],
+edges:[{from:"e_emp",to:"r_tra"},{from:"r_tra",to:"e_dep"},{from:"e_emp",to:"a_dni"},{from:"e_emp",to:"a_nom"},{from:"e_emp",to:"a_sal"},{from:"e_dep",to:"a_cod"},{from:"e_dep",to:"a_ndp"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPLEADO"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_sal",nodeId:"a_sal",termId:"SALARIO"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_dep",nodeId:"e_dep",termId:"DEPARTAMENTO"},{id:"z_cod",nodeId:"a_cod",termId:"COD_DEP"},{id:"z_ndp",nodeId:"a_ndp",termId:"NOMBRE_DEP"}]},
+crowfoot:{entities:[{id:"ce_emp",label:"EMPLEADO",x:50,y:118,w:120,h:44},{id:"ce_dep",label:"DEPARTAMENTO",x:370,y:118,w:140,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_emp",rightId:"ce_dep",slots:[{id:"sl1",entityId:"ce_emp",side:"right",correct:"many"},{id:"sl2",entityId:"ce_dep",side:"left",correct:"one"}]}]}},
+
+{id:3,title:"Tienda y Productos",text:"Una TIENDA vende PRODUCTOS. Cada producto tiene un COD_PRODUCTO, DESCRIPCIÓN y PRECIO. La tienda tiene un NIF y una DIRECCIÓN.",
+terms:[{id:"tienda",word:"TIENDA",type:"entity"},{id:"vende",word:"VENDE",type:"relation"},{id:"producto",word:"PRODUCTO",type:"entity"},{id:"cod_pro",word:"COD_PRODUCTO",type:"attr"},{id:"desc",word:"DESCRIPCIÓN",type:"attr"},{id:"precio",word:"PRECIO",type:"attr"},{id:"nif",word:"NIF",type:"attr"},{id:"dir",word:"DIRECCIÓN",type:"attr"}],
+diagram:{nodes:[{id:"e_tie",label:"TIENDA",type:"entity",x:30,y:170,w:100,h:44},{id:"a_nif",label:"NIF",type:"attr",x:30,y:60,w:65,h:36},{id:"a_dir",label:"DIRECCIÓN",type:"attr",x:30,y:290,w:90,h:36},{id:"r_ven",label:"VENDE",type:"relation",x:200,y:170,w:90,h:44},{id:"e_pro",label:"PRODUCTO",type:"entity",x:370,y:170,w:110,h:44},{id:"a_cod",label:"COD_PRODUCTO",type:"attr",x:380,y:60,w:110,h:36},{id:"a_des",label:"DESCRIPCIÓN",type:"attr",x:380,y:280,w:105,h:36},{id:"a_pre",label:"PRECIO",type:"attr",x:500,y:170,w:70,h:36}],
+edges:[{from:"e_tie",to:"r_ven"},{from:"r_ven",to:"e_pro"},{from:"e_tie",to:"a_nif"},{from:"e_tie",to:"a_dir"},{from:"e_pro",to:"a_cod"},{from:"e_pro",to:"a_des"},{from:"e_pro",to:"a_pre"}],
+zones:[{id:"z_tie",nodeId:"e_tie",termId:"TIENDA"},{id:"z_nif",nodeId:"a_nif",termId:"NIF"},{id:"z_dir",nodeId:"a_dir",termId:"DIRECCIÓN"},{id:"z_ven",nodeId:"r_ven",termId:"VENDE"},{id:"z_pro",nodeId:"e_pro",termId:"PRODUCTO"},{id:"z_cod",nodeId:"a_cod",termId:"COD_PRODUCTO"},{id:"z_des",nodeId:"a_des",termId:"DESCRIPCIÓN"},{id:"z_pre",nodeId:"a_pre",termId:"PRECIO"}]},
+crowfoot:{entities:[{id:"ce_tie",label:"TIENDA",x:50,y:118,w:100,h:44},{id:"ce_pro",label:"PRODUCTO",x:380,y:118,w:110,h:44}],relations:[{id:"cr_ven",label:"VENDE",leftId:"ce_tie",rightId:"ce_pro",slots:[{id:"sl1",entityId:"ce_tie",side:"right",correct:"one"},{id:"sl2",entityId:"ce_pro",side:"left",correct:"many"}]}]}},
+
+{id:4,title:"Hospital y Médicos",text:"Un HOSPITAL tiene MÉDICOS. Cada médico tiene un NUM_COLEGIADO y ESPECIALIDAD. Los médicos ATIENDEN a PACIENTES, que tienen un DNI_PAC y FECHA_NACIMIENTO.",
+terms:[{id:"hospital",word:"HOSPITAL",type:"entity"},{id:"medico",word:"MÉDICO",type:"entity"},{id:"num_col",word:"NUM_COLEGIADO",type:"attr"},{id:"espec",word:"ESPECIALIDAD",type:"attr"},{id:"atiende",word:"ATIENDEN",type:"relation"},{id:"paciente",word:"PACIENTE",type:"entity"},{id:"dni_pac",word:"DNI_PAC",type:"attr"},{id:"fecha_nac",word:"FECHA_NACIMIENTO",type:"attr"}],
+diagram:{nodes:[{id:"e_med",label:"MÉDICO",type:"entity",x:30,y:170,w:100,h:44},{id:"a_ncol",label:"NUM_COLEGIADO",type:"attr",x:30,y:55,w:110,h:36},{id:"a_esp",label:"ESPECIALIDAD",type:"attr",x:30,y:295,w:105,h:36},{id:"r_ati",label:"ATIENDEN",type:"relation",x:200,y:170,w:100,h:44},{id:"e_pac",label:"PACIENTE",type:"entity",x:375,y:170,w:110,h:44},{id:"a_dni",label:"DNI_PAC",type:"attr",x:380,y:55,w:90,h:36},{id:"a_fnc",label:"FECHA_NACIMIENTO",type:"attr",x:370,y:295,w:130,h:36}],
+edges:[{from:"e_med",to:"r_ati"},{from:"r_ati",to:"e_pac"},{from:"e_med",to:"a_ncol"},{from:"e_med",to:"a_esp"},{from:"e_pac",to:"a_dni"},{from:"e_pac",to:"a_fnc"}],
+zones:[{id:"z_med",nodeId:"e_med",termId:"MÉDICO"},{id:"z_ncol",nodeId:"a_ncol",termId:"NUM_COLEGIADO"},{id:"z_esp",nodeId:"a_esp",termId:"ESPECIALIDAD"},{id:"z_ati",nodeId:"r_ati",termId:"ATIENDEN"},{id:"z_pac",nodeId:"e_pac",termId:"PACIENTE"},{id:"z_dni",nodeId:"a_dni",termId:"DNI_PAC"},{id:"z_fnc",nodeId:"a_fnc",termId:"FECHA_NACIMIENTO"}]},
+crowfoot:{entities:[{id:"ce_med",label:"MÉDICO",x:50,y:118,w:100,h:44},{id:"ce_pac",label:"PACIENTE",x:380,y:118,w:110,h:44}],relations:[{id:"cr_ati",label:"ATIENDE",leftId:"ce_med",rightId:"ce_pac",slots:[{id:"sl1",entityId:"ce_med",side:"right",correct:"many"},{id:"sl2",entityId:"ce_pac",side:"left",correct:"many"}]}]}},
+
+{id:5,title:"Universidad y Alumnos",text:"Una UNIVERSIDAD ofrece ASIGNATURAS con COD_ASIG, NOMBRE_ASIG y NUM_CRÉDITOS. Los ALUMNOS se MATRICULAN en asignaturas; el alumno tiene un NIA y CORREO.",
+terms:[{id:"universidad",word:"UNIVERSIDAD",type:"entity"},{id:"asignatura",word:"ASIGNATURA",type:"entity"},{id:"cod_asig",word:"COD_ASIG",type:"attr"},{id:"nom_asig",word:"NOMBRE_ASIG",type:"attr"},{id:"creditos",word:"NUM_CRÉDITOS",type:"attr"},{id:"alumno",word:"ALUMNO",type:"entity"},{id:"matricula",word:"MATRICULAN",type:"relation"},{id:"nia",word:"NIA",type:"attr"},{id:"correo",word:"CORREO",type:"attr"}],
+diagram:{nodes:[{id:"e_alu",label:"ALUMNO",type:"entity",x:30,y:170,w:100,h:44},{id:"a_nia",label:"NIA",type:"attr",x:30,y:55,w:65,h:36},{id:"a_cor",label:"CORREO",type:"attr",x:30,y:295,w:80,h:36},{id:"r_mat",label:"MATRICULAN",type:"relation",x:200,y:170,w:110,h:44},{id:"e_asi",label:"ASIGNATURA",type:"entity",x:380,y:170,w:110,h:44},{id:"a_cod",label:"COD_ASIG",type:"attr",x:385,y:50,w:90,h:36},{id:"a_nas",label:"NOMBRE_ASIG",type:"attr",x:385,y:295,w:105,h:36},{id:"a_cre",label:"NUM_CRÉDITOS",type:"attr",x:510,y:170,w:90,h:36}],
+edges:[{from:"e_alu",to:"r_mat"},{from:"r_mat",to:"e_asi"},{from:"e_alu",to:"a_nia"},{from:"e_alu",to:"a_cor"},{from:"e_asi",to:"a_cod"},{from:"e_asi",to:"a_nas"},{from:"e_asi",to:"a_cre"}],
+zones:[{id:"z_alu",nodeId:"e_alu",termId:"ALUMNO"},{id:"z_nia",nodeId:"a_nia",termId:"NIA"},{id:"z_cor",nodeId:"a_cor",termId:"CORREO"},{id:"z_mat",nodeId:"r_mat",termId:"MATRICULAN"},{id:"z_asi",nodeId:"e_asi",termId:"ASIGNATURA"},{id:"z_cod",nodeId:"a_cod",termId:"COD_ASIG"},{id:"z_nas",nodeId:"a_nas",termId:"NOMBRE_ASIG"},{id:"z_cre",nodeId:"a_cre",termId:"NUM_CRÉDITOS"}]},
+crowfoot:{entities:[{id:"ce_alu",label:"ALUMNO",x:50,y:118,w:100,h:44},{id:"ce_asi",label:"ASIGNATURA",x:380,y:118,w:110,h:44}],relations:[{id:"cr_mat",label:"MATRICULA",leftId:"ce_alu",rightId:"ce_asi",slots:[{id:"sl1",entityId:"ce_alu",side:"right",correct:"many"},{id:"sl2",entityId:"ce_asi",side:"left",correct:"many"}]}]}},
+
+// ─── 6-15 MEDIA: + entidad débil ───
+{id:6,title:"Pedido y Líneas",text:"Un CLIENTE realiza PEDIDOS con NUM_PEDIDO y FECHA. Un pedido tiene LÍNEAS_PEDIDO con NUM_LÍNEA (discriminante) y CANTIDAD. La línea no existe sin su pedido.",
+terms:[{id:"cliente",word:"CLIENTE",type:"entity"},{id:"realiza",word:"REALIZA",type:"relation"},{id:"pedido",word:"PEDIDO",type:"entity"},{id:"num_ped",word:"NUM_PEDIDO",type:"attr"},{id:"fecha",word:"FECHA",type:"attr"},{id:"contiene",word:"CONTIENE",type:"relation"},{id:"linea",word:"LÍNEA_PEDIDO",type:"weak"},{id:"num_lin",word:"NUM_LÍNEA",type:"attr"},{id:"cantidad",word:"CANTIDAD",type:"attr"}],
+diagram:{nodes:[{id:"e_cli",label:"CLIENTE",type:"entity",x:20,y:180,w:100,h:44},{id:"r_rea",label:"REALIZA",type:"relation",x:180,y:180,w:90,h:44},{id:"e_ped",label:"PEDIDO",type:"entity",x:330,y:180,w:100,h:44},{id:"a_np",label:"NUM_PEDIDO",type:"attr",x:335,y:65,w:110,h:36},{id:"a_fec",label:"FECHA",type:"attr",x:335,y:295,w:75,h:36},{id:"r_con",label:"CONTIENE",type:"relation",x:450,y:180,w:95,h:44},{id:"e_lin",label:"LÍNEA_PEDIDO",type:"weak",x:450,y:295,w:90,h:44},{id:"a_nl",label:"NUM_LÍNEA",type:"attr",x:450,y:55,w:90,h:36},{id:"a_can",label:"CANTIDAD",type:"attr",x:450,y:370,w:85,h:36}],
+edges:[{from:"e_cli",to:"r_rea"},{from:"r_rea",to:"e_ped"},{from:"e_ped",to:"a_np"},{from:"e_ped",to:"a_fec"},{from:"e_ped",to:"r_con"},{from:"r_con",to:"e_lin"},{from:"e_lin",to:"a_nl"},{from:"e_lin",to:"a_can"}],
+zones:[{id:"z_cli",nodeId:"e_cli",termId:"CLIENTE"},{id:"z_rea",nodeId:"r_rea",termId:"REALIZA"},{id:"z_ped",nodeId:"e_ped",termId:"PEDIDO"},{id:"z_np",nodeId:"a_np",termId:"NUM_PEDIDO"},{id:"z_fec",nodeId:"a_fec",termId:"FECHA"},{id:"z_con",nodeId:"r_con",termId:"CONTIENE"},{id:"z_lin",nodeId:"e_lin",termId:"LÍNEA_PEDIDO"},{id:"z_nl",nodeId:"a_nl",termId:"NUM_LÍNEA"},{id:"z_can",nodeId:"a_can",termId:"CANTIDAD"}]},
+crowfoot:{entities:[{id:"ce_ped",label:"PEDIDO",x:60,y:118,w:100,h:44},{id:"ce_lin",label:"LÍNEA_PEDIDO",x:370,y:118,w:110,h:44}],relations:[{id:"cr_con",label:"CONTIENE",leftId:"ce_ped",rightId:"ce_lin",slots:[{id:"sl1",entityId:"ce_ped",side:"right",correct:"one"},{id:"sl2",entityId:"ce_lin",side:"left",correct:"many"}]}]}},
+
+{id:7,title:"Factura y Conceptos",text:"Un PROVEEDOR emite FACTURAS con NUM_FACTURA y FECHA_EMISION. Una factura tiene CONCEPTOS con NUM_CONCEPTO (discriminante) y DESCRIPCION. El concepto no existe sin la factura.",
+terms:[{id:"proveedor",word:"PROVEEDOR",type:"entity"},{id:"emite",word:"EMITE",type:"relation"},{id:"factura",word:"FACTURA",type:"entity"},{id:"num_fac",word:"NUM_FACTURA",type:"attr"},{id:"fecha_em",word:"FECHA_EMISION",type:"attr"},{id:"agrupa",word:"AGRUPA",type:"relation"},{id:"concepto",word:"CONCEPTO",type:"weak"},{id:"num_con",word:"NUM_CONCEPTO",type:"attr"},{id:"desc_con",word:"DESCRIPCION",type:"attr"}],
+diagram:{nodes:[{id:"e_pro",label:"PROVEEDOR",type:"entity",x:20,y:180,w:110,h:44},{id:"r_emi",label:"EMITE",type:"relation",x:185,y:180,w:80,h:44},{id:"e_fac",label:"FACTURA",type:"entity",x:325,y:180,w:100,h:44},{id:"a_nf",label:"NUM_FACTURA",type:"attr",x:330,y:65,w:105,h:36},{id:"a_fe",label:"FECHA_EMISION",type:"attr",x:330,y:305,w:115,h:36},{id:"r_agr",label:"AGRUPA",type:"relation",x:445,y:180,w:80,h:44},{id:"e_con",label:"CONCEPTO",type:"weak",x:445,y:295,w:100,h:44},{id:"a_nc",label:"NUM_CONCEPTO",type:"attr",x:445,y:60,w:105,h:36},{id:"a_dc",label:"DESCRIPCION",type:"attr",x:445,y:370,w:100,h:36}],
+edges:[{from:"e_pro",to:"r_emi"},{from:"r_emi",to:"e_fac"},{from:"e_fac",to:"a_nf"},{from:"e_fac",to:"a_fe"},{from:"e_fac",to:"r_agr"},{from:"r_agr",to:"e_con"},{from:"e_con",to:"a_nc"},{from:"e_con",to:"a_dc"}],
+zones:[{id:"z_pro",nodeId:"e_pro",termId:"PROVEEDOR"},{id:"z_emi",nodeId:"r_emi",termId:"EMITE"},{id:"z_fac",nodeId:"e_fac",termId:"FACTURA"},{id:"z_nf",nodeId:"a_nf",termId:"NUM_FACTURA"},{id:"z_fe",nodeId:"a_fe",termId:"FECHA_EMISION"},{id:"z_agr",nodeId:"r_agr",termId:"AGRUPA"},{id:"z_con",nodeId:"e_con",termId:"CONCEPTO"},{id:"z_nc",nodeId:"a_nc",termId:"NUM_CONCEPTO"},{id:"z_dc",nodeId:"a_dc",termId:"DESCRIPCION"}]},
+crowfoot:{entities:[{id:"ce_fac",label:"FACTURA",x:60,y:118,w:100,h:44},{id:"ce_con",label:"CONCEPTO",x:380,y:118,w:100,h:44}],relations:[{id:"cr_agr",label:"AGRUPA",leftId:"ce_fac",rightId:"ce_con",slots:[{id:"sl1",entityId:"ce_fac",side:"right",correct:"one"},{id:"sl2",entityId:"ce_con",side:"left",correct:"many"}]}]}},
+
+{id:8,title:"Préstamo y Cuotas",text:"Un BANCO gestiona PRÉSTAMOS con NUM_PRESTAMO e IMPORTE. El préstamo genera CUOTAS con NUM_CUOTA (discriminante), FECHA_VENCIMIENTO e IMPORTE_CUOTA. La cuota depende del préstamo.",
+terms:[{id:"banco",word:"BANCO",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"prestamo",word:"PRÉSTAMO",type:"entity"},{id:"num_pre",word:"NUM_PRESTAMO",type:"attr"},{id:"importe",word:"IMPORTE",type:"attr"},{id:"genera",word:"GENERA",type:"relation"},{id:"cuota",word:"CUOTA",type:"weak"},{id:"num_cuo",word:"NUM_CUOTA",type:"attr"},{id:"fecha_ven",word:"FECHA_VENCIMIENTO",type:"attr"},{id:"imp_cuo",word:"IMPORTE_CUOTA",type:"attr"}],
+diagram:{nodes:[{id:"e_ban",label:"BANCO",type:"entity",x:15,y:180,w:90,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:160,y:180,w:95,h:44},{id:"e_pre",label:"PRÉSTAMO",type:"entity",x:315,y:180,w:110,h:44},{id:"a_np",label:"NUM_PRESTAMO",type:"attr",x:320,y:60,w:110,h:36},{id:"a_imp",label:"IMPORTE",type:"attr",x:320,y:305,w:85,h:36},{id:"r_gen",label:"GENERA",type:"relation",x:440,y:180,w:80,h:44},{id:"e_cuo",label:"CUOTA",type:"weak",x:440,y:295,w:80,h:44},{id:"a_nc",label:"NUM_CUOTA",type:"attr",x:440,y:55,w:95,h:36},{id:"a_fv",label:"FECHA_VENCIMIENTO",type:"attr",x:440,y:370,w:120,h:36},{id:"a_ic",label:"IMPORTE_CUOTA",type:"attr",x:330,y:370,w:105,h:36}],
+edges:[{from:"e_ban",to:"r_ges"},{from:"r_ges",to:"e_pre"},{from:"e_pre",to:"a_np"},{from:"e_pre",to:"a_imp"},{from:"e_pre",to:"r_gen"},{from:"r_gen",to:"e_cuo"},{from:"e_cuo",to:"a_nc"},{from:"e_cuo",to:"a_fv"},{from:"e_cuo",to:"a_ic"}],
+zones:[{id:"z_ban",nodeId:"e_ban",termId:"BANCO"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_pre",nodeId:"e_pre",termId:"PRÉSTAMO"},{id:"z_np",nodeId:"a_np",termId:"NUM_PRESTAMO"},{id:"z_imp",nodeId:"a_imp",termId:"IMPORTE"},{id:"z_gen",nodeId:"r_gen",termId:"GENERA"},{id:"z_cuo",nodeId:"e_cuo",termId:"CUOTA"},{id:"z_nc",nodeId:"a_nc",termId:"NUM_CUOTA"},{id:"z_fv",nodeId:"a_fv",termId:"FECHA_VENCIMIENTO"},{id:"z_ic",nodeId:"a_ic",termId:"IMPORTE_CUOTA"}]},
+crowfoot:{entities:[{id:"ce_pre",label:"PRÉSTAMO",x:60,y:118,w:110,h:44},{id:"ce_cuo",label:"CUOTA",x:380,y:118,w:80,h:44}],relations:[{id:"cr_gen",label:"GENERA",leftId:"ce_pre",rightId:"ce_cuo",slots:[{id:"sl1",entityId:"ce_pre",side:"right",correct:"one"},{id:"sl2",entityId:"ce_cuo",side:"left",correct:"many"}]}]}},
+
+{id:9,title:"Proyecto y Tareas",text:"Una EMPRESA desarrolla PROYECTOS con COD_PROYECTO y NOMBRE_PROYECTO. Un proyecto se divide en TAREAS con NUM_TAREA (discriminante), DESCRIPCION y ESTADO. La tarea solo existe dentro de su proyecto.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"desarrolla",word:"DESARROLLA",type:"relation"},{id:"proyecto",word:"PROYECTO",type:"entity"},{id:"cod_proy",word:"COD_PROYECTO",type:"attr"},{id:"nom_proy",word:"NOMBRE_PROYECTO",type:"attr"},{id:"divide",word:"DIVIDE",type:"relation"},{id:"tarea",word:"TAREA",type:"weak"},{id:"num_tar",word:"NUM_TAREA",type:"attr"},{id:"desc_tar",word:"DESCRIPCION",type:"attr"},{id:"estado",word:"ESTADO",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPRESA",type:"entity",x:15,y:180,w:100,h:44},{id:"r_des",label:"DESARROLLA",type:"relation",x:170,y:180,w:105,h:44},{id:"e_pro",label:"PROYECTO",type:"entity",x:330,y:180,w:110,h:44},{id:"a_cp",label:"COD_PROYECTO",type:"attr",x:335,y:60,w:105,h:36},{id:"a_np",label:"NOMBRE_PROYECTO",type:"attr",x:335,y:305,w:120,h:36},{id:"r_div",label:"DIVIDE",type:"relation",x:455,y:180,w:80,h:44},{id:"e_tar",label:"TAREA",type:"weak",x:455,y:295,w:80,h:44},{id:"a_nt",label:"NUM_TAREA",type:"attr",x:455,y:55,w:95,h:36},{id:"a_dt",label:"DESCRIPCION",type:"attr",x:455,y:370,w:100,h:36},{id:"a_est",label:"ESTADO",type:"attr",x:335,y:370,w:78,h:36}],
+edges:[{from:"e_emp",to:"r_des"},{from:"r_des",to:"e_pro"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"a_np"},{from:"e_pro",to:"r_div"},{from:"r_div",to:"e_tar"},{from:"e_tar",to:"a_nt"},{from:"e_tar",to:"a_dt"},{from:"e_tar",to:"a_est"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPRESA"},{id:"z_des",nodeId:"r_des",termId:"DESARROLLA"},{id:"z_pro",nodeId:"e_pro",termId:"PROYECTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PROYECTO"},{id:"z_np",nodeId:"a_np",termId:"NOMBRE_PROYECTO"},{id:"z_div",nodeId:"r_div",termId:"DIVIDE"},{id:"z_tar",nodeId:"e_tar",termId:"TAREA"},{id:"z_nt",nodeId:"a_nt",termId:"NUM_TAREA"},{id:"z_dt",nodeId:"a_dt",termId:"DESCRIPCION"},{id:"z_est",nodeId:"a_est",termId:"ESTADO"}]},
+crowfoot:{entities:[{id:"ce_pro",label:"PROYECTO",x:60,y:118,w:110,h:44},{id:"ce_tar",label:"TAREA",x:380,y:118,w:80,h:44}],relations:[{id:"cr_div",label:"DIVIDE",leftId:"ce_pro",rightId:"ce_tar",slots:[{id:"sl1",entityId:"ce_pro",side:"right",correct:"one"},{id:"sl2",entityId:"ce_tar",side:"left",correct:"many"}]}]}},
+
+{id:10,title:"Reserva y Servicios",text:"Un CLIENTE hace RESERVAS con NUM_RESERVA y FECHA_ENTRADA. Una reserva puede incluir SERVICIOS_EXTRA con COD_SERVICIO (discriminante) y DESCRIPCION_SERVICIO. El servicio solo existe dentro de la reserva.",
+terms:[{id:"cliente",word:"CLIENTE",type:"entity"},{id:"hace",word:"HACE",type:"relation"},{id:"reserva",word:"RESERVA",type:"entity"},{id:"num_res",word:"NUM_RESERVA",type:"attr"},{id:"fecha_ent",word:"FECHA_ENTRADA",type:"attr"},{id:"incluye",word:"INCLUYE",type:"relation"},{id:"srv_extra",word:"SERVICIO_EXTRA",type:"weak"},{id:"cod_srv",word:"COD_SERVICIO",type:"attr"},{id:"desc_srv",word:"DESCRIPCION_SERVICIO",type:"attr"}],
+diagram:{nodes:[{id:"e_cli",label:"CLIENTE",type:"entity",x:15,y:180,w:90,h:44},{id:"r_hac",label:"HACE",type:"relation",x:160,y:180,w:80,h:44},{id:"e_res",label:"RESERVA",type:"entity",x:300,y:180,w:100,h:44},{id:"a_nr",label:"NUM_RESERVA",type:"attr",x:305,y:60,w:105,h:36},{id:"a_fe",label:"FECHA_ENTRADA",type:"attr",x:305,y:305,w:110,h:36},{id:"r_inc",label:"INCLUYE",type:"relation",x:420,y:180,w:80,h:44},{id:"e_srv",label:"SERVICIO_EXTRA",type:"weak",x:420,y:295,w:105,h:44},{id:"a_cs",label:"COD_SERVICIO",type:"attr",x:420,y:55,w:100,h:36},{id:"a_ds",label:"DESCRIPCION_SERVICIO",type:"attr",x:420,y:370,w:130,h:36}],
+edges:[{from:"e_cli",to:"r_hac"},{from:"r_hac",to:"e_res"},{from:"e_res",to:"a_nr"},{from:"e_res",to:"a_fe"},{from:"e_res",to:"r_inc"},{from:"r_inc",to:"e_srv"},{from:"e_srv",to:"a_cs"},{from:"e_srv",to:"a_ds"}],
+zones:[{id:"z_cli",nodeId:"e_cli",termId:"CLIENTE"},{id:"z_hac",nodeId:"r_hac",termId:"HACE"},{id:"z_res",nodeId:"e_res",termId:"RESERVA"},{id:"z_nr",nodeId:"a_nr",termId:"NUM_RESERVA"},{id:"z_fe",nodeId:"a_fe",termId:"FECHA_ENTRADA"},{id:"z_inc",nodeId:"r_inc",termId:"INCLUYE"},{id:"z_srv",nodeId:"e_srv",termId:"SERVICIO_EXTRA"},{id:"z_cs",nodeId:"a_cs",termId:"COD_SERVICIO"},{id:"z_ds",nodeId:"a_ds",termId:"DESCRIPCION_SERVICIO"}]},
+crowfoot:{entities:[{id:"ce_res",label:"RESERVA",x:60,y:118,w:100,h:44},{id:"ce_srv",label:"SERVICIO_EXTRA",x:370,y:118,w:115,h:44}],relations:[{id:"cr_inc",label:"INCLUYE",leftId:"ce_res",rightId:"ce_srv",slots:[{id:"sl1",entityId:"ce_res",side:"right",correct:"one"},{id:"sl2",entityId:"ce_srv",side:"left",correct:"zero_many"}]}]}},
+
+{id:11,title:"Receta y Pasos",text:"Un CHEF crea RECETAS con COD_RECETA y NOMBRE_RECETA. Una receta tiene PASOS con NUM_PASO (discriminante) y DESCRIPCION_PASO. El paso no puede existir sin la receta.",
+terms:[{id:"chef",word:"CHEF",type:"entity"},{id:"crea",word:"CREA",type:"relation"},{id:"receta",word:"RECETA",type:"entity"},{id:"cod_rec",word:"COD_RECETA",type:"attr"},{id:"nom_rec",word:"NOMBRE_RECETA",type:"attr"},{id:"tiene",word:"TIENE",type:"relation"},{id:"paso",word:"PASO",type:"weak"},{id:"num_pas",word:"NUM_PASO",type:"attr"},{id:"desc_pas",word:"DESCRIPCION_PASO",type:"attr"}],
+diagram:{nodes:[{id:"e_che",label:"CHEF",type:"entity",x:15,y:180,w:80,h:44},{id:"r_cre",label:"CREA",type:"relation",x:150,y:180,w:75,h:44},{id:"e_rec",label:"RECETA",type:"entity",x:285,y:180,w:90,h:44},{id:"a_cr",label:"COD_RECETA",type:"attr",x:290,y:60,w:95,h:36},{id:"a_nr",label:"NOMBRE_RECETA",type:"attr",x:290,y:305,w:105,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:435,y:180,w:75,h:44},{id:"e_pas",label:"PASO",type:"weak",x:435,y:295,w:75,h:44},{id:"a_np",label:"NUM_PASO",type:"attr",x:435,y:55,w:90,h:36},{id:"a_dp",label:"DESCRIPCION_PASO",type:"attr",x:435,y:370,w:115,h:36}],
+edges:[{from:"e_che",to:"r_cre"},{from:"r_cre",to:"e_rec"},{from:"e_rec",to:"a_cr"},{from:"e_rec",to:"a_nr"},{from:"e_rec",to:"r_tie"},{from:"r_tie",to:"e_pas"},{from:"e_pas",to:"a_np"},{from:"e_pas",to:"a_dp"}],
+zones:[{id:"z_che",nodeId:"e_che",termId:"CHEF"},{id:"z_cre",nodeId:"r_cre",termId:"CREA"},{id:"z_rec",nodeId:"e_rec",termId:"RECETA"},{id:"z_cr",nodeId:"a_cr",termId:"COD_RECETA"},{id:"z_nr",nodeId:"a_nr",termId:"NOMBRE_RECETA"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_pas",nodeId:"e_pas",termId:"PASO"},{id:"z_np",nodeId:"a_np",termId:"NUM_PASO"},{id:"z_dp",nodeId:"a_dp",termId:"DESCRIPCION_PASO"}]},
+crowfoot:{entities:[{id:"ce_rec",label:"RECETA",x:60,y:118,w:90,h:44},{id:"ce_pas",label:"PASO",x:390,y:118,w:75,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_rec",rightId:"ce_pas",slots:[{id:"sl1",entityId:"ce_rec",side:"right",correct:"one"},{id:"sl2",entityId:"ce_pas",side:"left",correct:"many"}]}]}},
+
+{id:12,title:"Torneo y Partidos",text:"Una FEDERACIÓN organiza TORNEOS con COD_TORNEO y NOMBRE_TORNEO. Un torneo tiene PARTIDOS con NUM_PARTIDO (discriminante) y FECHA_PARTIDO. El partido pertenece a un único torneo.",
+terms:[{id:"federacion",word:"FEDERACIÓN",type:"entity"},{id:"organiza",word:"ORGANIZA",type:"relation"},{id:"torneo",word:"TORNEO",type:"entity"},{id:"cod_tor",word:"COD_TORNEO",type:"attr"},{id:"nom_tor",word:"NOMBRE_TORNEO",type:"attr"},{id:"contiene",word:"CONTIENE",type:"relation"},{id:"partido",word:"PARTIDO",type:"weak"},{id:"num_par",word:"NUM_PARTIDO",type:"attr"},{id:"fecha_par",word:"FECHA_PARTIDO",type:"attr"}],
+diagram:{nodes:[{id:"e_fed",label:"FEDERACIÓN",type:"entity",x:15,y:180,w:110,h:44},{id:"r_org",label:"ORGANIZA",type:"relation",x:180,y:180,w:90,h:44},{id:"e_tor",label:"TORNEO",type:"entity",x:330,y:180,w:90,h:44},{id:"a_ct",label:"COD_TORNEO",type:"attr",x:335,y:60,w:95,h:36},{id:"a_nt",label:"NOMBRE_TORNEO",type:"attr",x:335,y:305,w:110,h:36},{id:"r_con",label:"CONTIENE",type:"relation",x:445,y:180,w:85,h:44},{id:"e_par",label:"PARTIDO",type:"weak",x:445,y:295,w:85,h:44},{id:"a_np",label:"NUM_PARTIDO",type:"attr",x:445,y:55,w:100,h:36},{id:"a_fp",label:"FECHA_PARTIDO",type:"attr",x:445,y:370,w:110,h:36}],
+edges:[{from:"e_fed",to:"r_org"},{from:"r_org",to:"e_tor"},{from:"e_tor",to:"a_ct"},{from:"e_tor",to:"a_nt"},{from:"e_tor",to:"r_con"},{from:"r_con",to:"e_par"},{from:"e_par",to:"a_np"},{from:"e_par",to:"a_fp"}],
+zones:[{id:"z_fed",nodeId:"e_fed",termId:"FEDERACIÓN"},{id:"z_org",nodeId:"r_org",termId:"ORGANIZA"},{id:"z_tor",nodeId:"e_tor",termId:"TORNEO"},{id:"z_ct",nodeId:"a_ct",termId:"COD_TORNEO"},{id:"z_nt",nodeId:"a_nt",termId:"NOMBRE_TORNEO"},{id:"z_con",nodeId:"r_con",termId:"CONTIENE"},{id:"z_par",nodeId:"e_par",termId:"PARTIDO"},{id:"z_np",nodeId:"a_np",termId:"NUM_PARTIDO"},{id:"z_fp",nodeId:"a_fp",termId:"FECHA_PARTIDO"}]},
+crowfoot:{entities:[{id:"ce_tor",label:"TORNEO",x:60,y:118,w:90,h:44},{id:"ce_par",label:"PARTIDO",x:390,y:118,w:85,h:44}],relations:[{id:"cr_con",label:"CONTIENE",leftId:"ce_tor",rightId:"ce_par",slots:[{id:"sl1",entityId:"ce_tor",side:"right",correct:"one"},{id:"sl2",entityId:"ce_par",side:"left",correct:"many"}]}]}},
+
+{id:13,title:"Contrato y Cláusulas",text:"Una EMPRESA firma CONTRATOS con NUM_CONTRATO y FECHA_FIRMA. Un contrato contiene CLÁUSULAS con NUM_CLAUSULA (discriminante) y TEXTO. La cláusula depende del contrato.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"firma",word:"FIRMA",type:"relation"},{id:"contrato",word:"CONTRATO",type:"entity"},{id:"num_con",word:"NUM_CONTRATO",type:"attr"},{id:"fecha_fir",word:"FECHA_FIRMA",type:"attr"},{id:"contiene",word:"CONTIENE",type:"relation"},{id:"clausula",word:"CLÁUSULA",type:"weak"},{id:"num_cla",word:"NUM_CLAUSULA",type:"attr"},{id:"texto",word:"TEXTO",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPRESA",type:"entity",x:15,y:180,w:100,h:44},{id:"r_fir",label:"FIRMA",type:"relation",x:170,y:180,w:80,h:44},{id:"e_con",label:"CONTRATO",type:"entity",x:310,y:180,w:105,h:44},{id:"a_nc",label:"NUM_CONTRATO",type:"attr",x:315,y:60,w:105,h:36},{id:"a_ff",label:"FECHA_FIRMA",type:"attr",x:315,y:305,w:100,h:36},{id:"r_cot",label:"CONTIENE",type:"relation",x:430,y:180,w:85,h:44},{id:"e_cla",label:"CLÁUSULA",type:"weak",x:430,y:295,w:90,h:44},{id:"a_ncl",label:"NUM_CLAUSULA",type:"attr",x:430,y:55,w:105,h:36},{id:"a_tex",label:"TEXTO",type:"attr",x:430,y:370,w:75,h:36}],
+edges:[{from:"e_emp",to:"r_fir"},{from:"r_fir",to:"e_con"},{from:"e_con",to:"a_nc"},{from:"e_con",to:"a_ff"},{from:"e_con",to:"r_cot"},{from:"r_cot",to:"e_cla"},{from:"e_cla",to:"a_ncl"},{from:"e_cla",to:"a_tex"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPRESA"},{id:"z_fir",nodeId:"r_fir",termId:"FIRMA"},{id:"z_con",nodeId:"e_con",termId:"CONTRATO"},{id:"z_nc",nodeId:"a_nc",termId:"NUM_CONTRATO"},{id:"z_ff",nodeId:"a_ff",termId:"FECHA_FIRMA"},{id:"z_cot",nodeId:"r_cot",termId:"CONTIENE"},{id:"z_cla",nodeId:"e_cla",termId:"CLÁUSULA"},{id:"z_ncl",nodeId:"a_ncl",termId:"NUM_CLAUSULA"},{id:"z_tex",nodeId:"a_tex",termId:"TEXTO"}]},
+crowfoot:{entities:[{id:"ce_con",label:"CONTRATO",x:60,y:118,w:105,h:44},{id:"ce_cla",label:"CLÁUSULA",x:390,y:118,w:90,h:44}],relations:[{id:"cr_cot",label:"CONTIENE",leftId:"ce_con",rightId:"ce_cla",slots:[{id:"sl1",entityId:"ce_con",side:"right",correct:"one"},{id:"sl2",entityId:"ce_cla",side:"left",correct:"many"}]}]}},
+
+{id:14,title:"Matrícula y Asignaturas",text:"Un ALUMNO realiza una MATRÍCULA con NUM_MATRICULA y FECHA_MATRICULA. La matrícula incluye ASIG_MATRICULADAS con COD_ASIG_MAT (discriminante) y NOTA_FINAL. No existe asig. matriculada sin matrícula.",
+terms:[{id:"alumno",word:"ALUMNO",type:"entity"},{id:"realiza",word:"REALIZA",type:"relation"},{id:"matricula",word:"MATRÍCULA",type:"entity"},{id:"num_mat",word:"NUM_MATRICULA",type:"attr"},{id:"fecha_mat",word:"FECHA_MATRICULA",type:"attr"},{id:"incluye",word:"INCLUYE",type:"relation"},{id:"asig_mat",word:"ASIG_MATRICULADA",type:"weak"},{id:"cod_asig",word:"COD_ASIG_MAT",type:"attr"},{id:"nota",word:"NOTA_FINAL",type:"attr"}],
+diagram:{nodes:[{id:"e_alu",label:"ALUMNO",type:"entity",x:15,y:180,w:90,h:44},{id:"r_rea",label:"REALIZA",type:"relation",x:160,y:180,w:85,h:44},{id:"e_mat",label:"MATRÍCULA",type:"entity",x:305,y:180,w:110,h:44},{id:"a_nm",label:"NUM_MATRICULA",type:"attr",x:310,y:60,w:110,h:36},{id:"a_fm",label:"FECHA_MATRICULA",type:"attr",x:310,y:305,w:120,h:36},{id:"r_inc",label:"INCLUYE",type:"relation",x:435,y:180,w:80,h:44},{id:"e_asm",label:"ASIG_MATRICULADA",type:"weak",x:435,y:295,w:110,h:44},{id:"a_ca",label:"COD_ASIG_MAT",type:"attr",x:435,y:55,w:105,h:36},{id:"a_not",label:"NOTA_FINAL",type:"attr",x:435,y:370,w:95,h:36}],
+edges:[{from:"e_alu",to:"r_rea"},{from:"r_rea",to:"e_mat"},{from:"e_mat",to:"a_nm"},{from:"e_mat",to:"a_fm"},{from:"e_mat",to:"r_inc"},{from:"r_inc",to:"e_asm"},{from:"e_asm",to:"a_ca"},{from:"e_asm",to:"a_not"}],
+zones:[{id:"z_alu",nodeId:"e_alu",termId:"ALUMNO"},{id:"z_rea",nodeId:"r_rea",termId:"REALIZA"},{id:"z_mat",nodeId:"e_mat",termId:"MATRÍCULA"},{id:"z_nm",nodeId:"a_nm",termId:"NUM_MATRICULA"},{id:"z_fm",nodeId:"a_fm",termId:"FECHA_MATRICULA"},{id:"z_inc",nodeId:"r_inc",termId:"INCLUYE"},{id:"z_asm",nodeId:"e_asm",termId:"ASIG_MATRICULADA"},{id:"z_ca",nodeId:"a_ca",termId:"COD_ASIG_MAT"},{id:"z_not",nodeId:"a_not",termId:"NOTA_FINAL"}]},
+crowfoot:{entities:[{id:"ce_mat",label:"MATRÍCULA",x:60,y:118,w:110,h:44},{id:"ce_asm",label:"ASIG_MATRICULADA",x:370,y:118,w:120,h:44}],relations:[{id:"cr_inc",label:"INCLUYE",leftId:"ce_mat",rightId:"ce_asm",slots:[{id:"sl1",entityId:"ce_mat",side:"right",correct:"one"},{id:"sl2",entityId:"ce_asm",side:"left",correct:"many"}]}]}},
+
+{id:15,title:"Expediente y Documentos",text:"Una ADMINISTRACION gestiona EXPEDIENTES con NUM_EXPEDIENTE y FECHA_APERTURA. Un expediente contiene DOCUMENTOS con NUM_DOCUMENTO (discriminante) y TIPO_DOCUMENTO. El documento no existe sin su expediente.",
+terms:[{id:"admin",word:"ADMINISTRACION",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"expediente",word:"EXPEDIENTE",type:"entity"},{id:"num_exp",word:"NUM_EXPEDIENTE",type:"attr"},{id:"fecha_ape",word:"FECHA_APERTURA",type:"attr"},{id:"contiene",word:"CONTIENE",type:"relation"},{id:"documento",word:"DOCUMENTO",type:"weak"},{id:"num_doc",word:"NUM_DOCUMENTO",type:"attr"},{id:"tipo_doc",word:"TIPO_DOCUMENTO",type:"attr"}],
+diagram:{nodes:[{id:"e_adm",label:"ADMINISTRACION",type:"entity",x:5,y:180,w:135,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:195,y:180,w:90,h:44},{id:"e_exp",label:"EXPEDIENTE",type:"entity",x:345,y:180,w:110,h:44},{id:"a_ne",label:"NUM_EXPEDIENTE",type:"attr",x:350,y:60,w:110,h:36},{id:"a_fa",label:"FECHA_APERTURA",type:"attr",x:350,y:305,w:110,h:36},{id:"r_con",label:"CONTIENE",type:"relation",x:465,y:180,w:85,h:44},{id:"e_doc",label:"DOCUMENTO",type:"weak",x:465,y:295,w:100,h:44},{id:"a_nd",label:"NUM_DOCUMENTO",type:"attr",x:465,y:55,w:105,h:36},{id:"a_td",label:"TIPO_DOCUMENTO",type:"attr",x:465,y:370,w:110,h:36}],
+edges:[{from:"e_adm",to:"r_ges"},{from:"r_ges",to:"e_exp"},{from:"e_exp",to:"a_ne"},{from:"e_exp",to:"a_fa"},{from:"e_exp",to:"r_con"},{from:"r_con",to:"e_doc"},{from:"e_doc",to:"a_nd"},{from:"e_doc",to:"a_td"}],
+zones:[{id:"z_adm",nodeId:"e_adm",termId:"ADMINISTRACION"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_exp",nodeId:"e_exp",termId:"EXPEDIENTE"},{id:"z_ne",nodeId:"a_ne",termId:"NUM_EXPEDIENTE"},{id:"z_fa",nodeId:"a_fa",termId:"FECHA_APERTURA"},{id:"z_con",nodeId:"r_con",termId:"CONTIENE"},{id:"z_doc",nodeId:"e_doc",termId:"DOCUMENTO"},{id:"z_nd",nodeId:"a_nd",termId:"NUM_DOCUMENTO"},{id:"z_td",nodeId:"a_td",termId:"TIPO_DOCUMENTO"}]},
+crowfoot:{entities:[{id:"ce_exp",label:"EXPEDIENTE",x:60,y:118,w:110,h:44},{id:"ce_doc",label:"DOCUMENTO",x:390,y:118,w:100,h:44}],relations:[{id:"cr_con",label:"CONTIENE",leftId:"ce_exp",rightId:"ce_doc",slots:[{id:"sl1",entityId:"ce_exp",side:"right",correct:"one"},{id:"sl2",entityId:"ce_doc",side:"left",correct:"many"}]}]}},
+// ─── 16-25 AVANZADA: + atributo derivado ───
+{id:16,title:"Empleados con Antigüedad",text:"Una EMPRESA tiene EMPLEADOS con DNI, NOMBRE, FECHA_CONTRATACION y SALARIO_BASE. La ANTIGÜEDAD se calcula desde la fecha de contratación. Trabajan en DEPARTAMENTOS con COD_DEP y NOMBRE_DEP.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"empleado",word:"EMPLEADO",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"fecha_con",word:"FECHA_CONTRATACION",type:"attr"},{id:"salario",word:"SALARIO_BASE",type:"attr"},{id:"antiguedad",word:"ANTIGÜEDAD",type:"deriv"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"departamento",word:"DEPARTAMENTO",type:"entity"},{id:"cod_dep",word:"COD_DEP",type:"attr"},{id:"nombre_dep",word:"NOMBRE_DEP",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPLEADO",type:"entity",x:30,y:190,w:110,h:44},{id:"a_dni",label:"DNI",type:"attr",x:30,y:65,w:65,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:110,y:65,w:80,h:36},{id:"a_fec",label:"FECHA_CONTRATACION",type:"attr",x:30,y:340,w:120,h:36},{id:"a_sal",label:"SALARIO_BASE",type:"attr",x:165,y:340,w:100,h:36},{id:"a_ant",label:"ANTIGÜEDAD",type:"deriv",x:280,y:340,w:95,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:225,y:190,w:90,h:44},{id:"e_dep",label:"DEPARTAMENTO",type:"entity",x:380,y:190,w:130,h:44},{id:"a_cd",label:"COD_DEP",type:"attr",x:390,y:65,w:85,h:36},{id:"a_nd",label:"NOMBRE_DEP",type:"attr",x:390,y:340,w:100,h:36}],
+edges:[{from:"e_emp",to:"r_tra"},{from:"r_tra",to:"e_dep"},{from:"e_emp",to:"a_dni"},{from:"e_emp",to:"a_nom"},{from:"e_emp",to:"a_fec"},{from:"e_emp",to:"a_sal"},{from:"e_emp",to:"a_ant"},{from:"e_dep",to:"a_cd"},{from:"e_dep",to:"a_nd"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPLEADO"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_fec",nodeId:"a_fec",termId:"FECHA_CONTRATACION"},{id:"z_sal",nodeId:"a_sal",termId:"SALARIO_BASE"},{id:"z_ant",nodeId:"a_ant",termId:"ANTIGÜEDAD"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_dep",nodeId:"e_dep",termId:"DEPARTAMENTO"},{id:"z_cd",nodeId:"a_cd",termId:"COD_DEP"},{id:"z_nd",nodeId:"a_nd",termId:"NOMBRE_DEP"}]},
+crowfoot:{entities:[{id:"ce_emp",label:"EMPLEADO",x:50,y:118,w:120,h:44},{id:"ce_dep",label:"DEPARTAMENTO",x:370,y:118,w:130,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_emp",rightId:"ce_dep",slots:[{id:"sl1",entityId:"ce_emp",side:"right",correct:"many"},{id:"sl2",entityId:"ce_dep",side:"left",correct:"one"}]}]}},
+
+{id:17,title:"Producto con Precio IVA",text:"Una TIENDA vende PRODUCTOS con COD_PRODUCTO, NOMBRE_PRODUCTO, PRECIO_BASE y PORCENTAJE_IVA. El PRECIO_CON_IVA se calcula. Los productos pertenecen a CATEGORÍAS con COD_CAT y NOMBRE_CAT.",
+terms:[{id:"tienda",word:"TIENDA",type:"entity"},{id:"vende",word:"VENDE",type:"relation"},{id:"producto",word:"PRODUCTO",type:"entity"},{id:"cod_pro",word:"COD_PRODUCTO",type:"attr"},{id:"nom_pro",word:"NOMBRE_PRODUCTO",type:"attr"},{id:"prec_base",word:"PRECIO_BASE",type:"attr"},{id:"pct_iva",word:"PORCENTAJE_IVA",type:"attr"},{id:"prec_iva",word:"PRECIO_CON_IVA",type:"deriv"},{id:"pertenece",word:"PERTENECE",type:"relation"},{id:"categoria",word:"CATEGORÍA",type:"entity"},{id:"cod_cat",word:"COD_CAT",type:"attr"},{id:"nom_cat",word:"NOMBRE_CAT",type:"attr"}],
+diagram:{nodes:[{id:"e_pro",label:"PRODUCTO",type:"entity",x:200,y:180,w:120,h:44},{id:"a_cp",label:"COD_PRODUCTO",type:"attr",x:30,y:70,w:105,h:36},{id:"a_np",label:"NOMBRE_PRODUCTO",type:"attr",x:155,y:70,w:120,h:36},{id:"a_pb",label:"PRECIO_BASE",type:"attr",x:30,y:320,w:100,h:36},{id:"a_pi",label:"PORCENTAJE_IVA",type:"attr",x:145,y:320,w:115,h:36},{id:"a_piv",label:"PRECIO_CON_IVA",type:"deriv",x:275,y:320,w:115,h:36},{id:"r_ven",label:"VENDE",type:"relation",x:30,y:180,w:80,h:44},{id:"e_tie",label:"TIENDA",type:"entity",x:30,y:280,w:80,h:44},{id:"r_per",label:"PERTENECE",type:"relation",x:400,y:180,w:95,h:44},{id:"e_cat",label:"CATEGORÍA",type:"entity",x:400,y:60,w:100,h:44},{id:"a_cc",label:"COD_CAT",type:"attr",x:400,y:295,w:85,h:36},{id:"a_nc",label:"NOMBRE_CAT",type:"attr",x:400,y:365,w:100,h:36}],
+edges:[{from:"e_tie",to:"r_ven"},{from:"r_ven",to:"e_pro"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"a_np"},{from:"e_pro",to:"a_pb"},{from:"e_pro",to:"a_pi"},{from:"e_pro",to:"a_piv"},{from:"e_pro",to:"r_per"},{from:"r_per",to:"e_cat"},{from:"e_cat",to:"a_cc"},{from:"e_cat",to:"a_nc"}],
+zones:[{id:"z_pro",nodeId:"e_pro",termId:"PRODUCTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PRODUCTO"},{id:"z_np",nodeId:"a_np",termId:"NOMBRE_PRODUCTO"},{id:"z_pb",nodeId:"a_pb",termId:"PRECIO_BASE"},{id:"z_pi",nodeId:"a_pi",termId:"PORCENTAJE_IVA"},{id:"z_piv",nodeId:"a_piv",termId:"PRECIO_CON_IVA"},{id:"z_ven",nodeId:"r_ven",termId:"VENDE"},{id:"z_tie",nodeId:"e_tie",termId:"TIENDA"},{id:"z_per",nodeId:"r_per",termId:"PERTENECE"},{id:"z_cat",nodeId:"e_cat",termId:"CATEGORÍA"},{id:"z_cc",nodeId:"a_cc",termId:"COD_CAT"},{id:"z_nc",nodeId:"a_nc",termId:"NOMBRE_CAT"}]},
+crowfoot:{entities:[{id:"ce_pro",label:"PRODUCTO",x:50,y:118,w:120,h:44},{id:"ce_cat",label:"CATEGORÍA",x:380,y:118,w:100,h:44}],relations:[{id:"cr_per",label:"PERTENECE",leftId:"ce_pro",rightId:"ce_cat",slots:[{id:"sl1",entityId:"ce_pro",side:"right",correct:"many"},{id:"sl2",entityId:"ce_cat",side:"left",correct:"one"}]}]}},
+
+{id:18,title:"Persona con Edad y Citas",text:"Una CLINICA atiende PERSONAS con DNI, NOMBRE y FECHA_NACIMIENTO. La EDAD se calcula desde la fecha de nacimiento. Las personas tienen CITAS con NUM_CITA (discriminante) y FECHA_CITA.",
+terms:[{id:"clinica",word:"CLINICA",type:"entity"},{id:"atiende",word:"ATIENDE",type:"relation"},{id:"persona",word:"PERSONA",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"fecha_nac",word:"FECHA_NACIMIENTO",type:"attr"},{id:"edad",word:"EDAD",type:"deriv"},{id:"tiene",word:"TIENE",type:"relation"},{id:"cita",word:"CITA",type:"weak"},{id:"num_cit",word:"NUM_CITA",type:"attr"},{id:"fecha_cit",word:"FECHA_CITA",type:"attr"}],
+diagram:{nodes:[{id:"e_cli",label:"CLINICA",type:"entity",x:15,y:180,w:90,h:44},{id:"r_ati",label:"ATIENDE",type:"relation",x:160,y:180,w:85,h:44},{id:"e_per",label:"PERSONA",type:"entity",x:305,y:180,w:100,h:44},{id:"a_dni",label:"DNI",type:"attr",x:310,y:55,w:65,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:395,y:55,w:80,h:36},{id:"a_fnc",label:"FECHA_NACIMIENTO",type:"attr",x:310,y:310,w:120,h:36},{id:"a_eda",label:"EDAD",type:"deriv",x:450,y:310,w:70,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:440,y:180,w:75,h:44},{id:"e_cit",label:"CITA",type:"weak",x:440,y:290,w:75,h:44},{id:"a_nc",label:"NUM_CITA",type:"attr",x:440,y:55,w:90,h:36},{id:"a_fc",label:"FECHA_CITA",type:"attr",x:440,y:370,w:90,h:36}],
+edges:[{from:"e_cli",to:"r_ati"},{from:"r_ati",to:"e_per"},{from:"e_per",to:"a_dni"},{from:"e_per",to:"a_nom"},{from:"e_per",to:"a_fnc"},{from:"e_per",to:"a_eda"},{from:"e_per",to:"r_tie"},{from:"r_tie",to:"e_cit"},{from:"e_cit",to:"a_nc"},{from:"e_cit",to:"a_fc"}],
+zones:[{id:"z_cli",nodeId:"e_cli",termId:"CLINICA"},{id:"z_ati",nodeId:"r_ati",termId:"ATIENDE"},{id:"z_per",nodeId:"e_per",termId:"PERSONA"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_fnc",nodeId:"a_fnc",termId:"FECHA_NACIMIENTO"},{id:"z_eda",nodeId:"a_eda",termId:"EDAD"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_cit",nodeId:"e_cit",termId:"CITA"},{id:"z_nc",nodeId:"a_nc",termId:"NUM_CITA"},{id:"z_fc",nodeId:"a_fc",termId:"FECHA_CITA"}]},
+crowfoot:{entities:[{id:"ce_per",label:"PERSONA",x:60,y:118,w:100,h:44},{id:"ce_cit",label:"CITA",x:390,y:118,w:75,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_per",rightId:"ce_cit",slots:[{id:"sl1",entityId:"ce_per",side:"right",correct:"one"},{id:"sl2",entityId:"ce_cit",side:"left",correct:"zero_many"}]}]}},
+
+{id:19,title:"Vuelo con Ocupación",text:"Una AEROLINEA opera VUELOS con NUM_VUELO, FECHA_VUELO, NUM_ASIENTOS_TOTAL y NUM_ASIENTOS_OCUPADOS. El PORCENTAJE_OCUPACION se calcula. El vuelo puede tener ESCALAS con NUM_ESCALA (discriminante) y AEROPUERTO.",
+terms:[{id:"aerolinea",word:"AEROLINEA",type:"entity"},{id:"opera",word:"OPERA",type:"relation"},{id:"vuelo",word:"VUELO",type:"entity"},{id:"num_vue",word:"NUM_VUELO",type:"attr"},{id:"fecha_vue",word:"FECHA_VUELO",type:"attr"},{id:"num_tot",word:"NUM_ASIENTOS_TOTAL",type:"attr"},{id:"num_ocu",word:"NUM_ASIENTOS_OCUPADOS",type:"attr"},{id:"pct_ocu",word:"PORCENTAJE_OCUPACION",type:"deriv"},{id:"tiene_escala",word:"TIENE",type:"relation"},{id:"escala",word:"ESCALA",type:"weak"},{id:"num_esc",word:"NUM_ESCALA",type:"attr"},{id:"aeropuerto",word:"AEROPUERTO",type:"attr"}],
+diagram:{nodes:[{id:"e_aer",label:"AEROLINEA",type:"entity",x:5,y:190,w:110,h:44},{id:"r_ope",label:"OPERA",type:"relation",x:175,y:190,w:80,h:44},{id:"e_vue",label:"VUELO",type:"entity",x:315,y:190,w:90,h:44},{id:"a_nv",label:"NUM_VUELO",type:"attr",x:15,y:75,w:90,h:36},{id:"a_fv",label:"FECHA_VUELO",type:"attr",x:125,y:75,w:95,h:36},{id:"a_nt",label:"NUM_ASIENTOS_TOTAL",type:"attr",x:15,y:340,w:130,h:36},{id:"a_no",label:"NUM_ASIENTOS_OCUPADOS",type:"attr",x:160,y:340,w:140,h:36},{id:"a_po",label:"PORCENTAJE_OCUPACION",type:"deriv",x:315,y:340,w:130,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:455,y:190,w:75,h:44},{id:"e_esc",label:"ESCALA",type:"weak",x:455,y:305,w:80,h:44},{id:"a_ne",label:"NUM_ESCALA",type:"attr",x:455,y:65,w:90,h:36},{id:"a_ae",label:"AEROPUERTO",type:"attr",x:455,y:370,w:95,h:36}],
+edges:[{from:"e_aer",to:"r_ope"},{from:"r_ope",to:"e_vue"},{from:"e_vue",to:"a_nv"},{from:"e_vue",to:"a_fv"},{from:"e_vue",to:"a_nt"},{from:"e_vue",to:"a_no"},{from:"e_vue",to:"a_po"},{from:"e_vue",to:"r_tie"},{from:"r_tie",to:"e_esc"},{from:"e_esc",to:"a_ne"},{from:"e_esc",to:"a_ae"}],
+zones:[{id:"z_aer",nodeId:"e_aer",termId:"AEROLINEA"},{id:"z_ope",nodeId:"r_ope",termId:"OPERA"},{id:"z_vue",nodeId:"e_vue",termId:"VUELO"},{id:"z_nv",nodeId:"a_nv",termId:"NUM_VUELO"},{id:"z_fv",nodeId:"a_fv",termId:"FECHA_VUELO"},{id:"z_nt",nodeId:"a_nt",termId:"NUM_ASIENTOS_TOTAL"},{id:"z_no",nodeId:"a_no",termId:"NUM_ASIENTOS_OCUPADOS"},{id:"z_po",nodeId:"a_po",termId:"PORCENTAJE_OCUPACION"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_esc",nodeId:"e_esc",termId:"ESCALA"},{id:"z_ne",nodeId:"a_ne",termId:"NUM_ESCALA"},{id:"z_ae",nodeId:"a_ae",termId:"AEROPUERTO"}]},
+crowfoot:{entities:[{id:"ce_vue",label:"VUELO",x:60,y:118,w:90,h:44},{id:"ce_esc",label:"ESCALA",x:390,y:118,w:80,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_vue",rightId:"ce_esc",slots:[{id:"sl1",entityId:"ce_vue",side:"right",correct:"one"},{id:"sl2",entityId:"ce_esc",side:"left",correct:"zero_many"}]}]}},
+
+{id:20,title:"Sensor con Estado Alerta",text:"Un SISTEMA_IOT gestiona SENSORES con COD_SENSOR, TIPO_SENSOR, VALOR_ACTUAL y UMBRAL_MAXIMO. El ESTADO_ALERTA se deriva comparando ambos valores. Los sensores registran LECTURAS con NUM_LECTURA (discriminante) y TIMESTAMP.",
+terms:[{id:"sistema",word:"SISTEMA_IOT",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"sensor",word:"SENSOR",type:"entity"},{id:"cod_sen",word:"COD_SENSOR",type:"attr"},{id:"tipo_sen",word:"TIPO_SENSOR",type:"attr"},{id:"val_act",word:"VALOR_ACTUAL",type:"attr"},{id:"umbral",word:"UMBRAL_MAXIMO",type:"attr"},{id:"est_ale",word:"ESTADO_ALERTA",type:"deriv"},{id:"registra",word:"REGISTRA",type:"relation"},{id:"lectura",word:"LECTURA",type:"weak"},{id:"num_lec",word:"NUM_LECTURA",type:"attr"},{id:"timestamp",word:"TIMESTAMP",type:"attr"}],
+diagram:{nodes:[{id:"e_sis",label:"SISTEMA_IOT",type:"entity",x:5,y:190,w:120,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:180,y:190,w:90,h:44},{id:"e_sen",label:"SENSOR",type:"entity",x:330,y:190,w:90,h:44},{id:"a_cs",label:"COD_SENSOR",type:"attr",x:25,y:75,w:95,h:36},{id:"a_ts",label:"TIPO_SENSOR",type:"attr",x:140,y:75,w:95,h:36},{id:"a_va",label:"VALOR_ACTUAL",type:"attr",x:25,y:345,w:100,h:36},{id:"a_um",label:"UMBRAL_MAXIMO",type:"attr",x:140,y:345,w:110,h:36},{id:"a_ea",label:"ESTADO_ALERTA",type:"deriv",x:265,y:345,w:105,h:36},{id:"r_reg",label:"REGISTRA",type:"relation",x:440,y:190,w:90,h:44},{id:"e_lec",label:"LECTURA",type:"weak",x:440,y:305,w:80,h:44},{id:"a_nl",label:"NUM_LECTURA",type:"attr",x:440,y:65,w:95,h:36},{id:"a_ti",label:"TIMESTAMP",type:"attr",x:440,y:370,w:95,h:36}],
+edges:[{from:"e_sis",to:"r_ges"},{from:"r_ges",to:"e_sen"},{from:"e_sen",to:"a_cs"},{from:"e_sen",to:"a_ts"},{from:"e_sen",to:"a_va"},{from:"e_sen",to:"a_um"},{from:"e_sen",to:"a_ea"},{from:"e_sen",to:"r_reg"},{from:"r_reg",to:"e_lec"},{from:"e_lec",to:"a_nl"},{from:"e_lec",to:"a_ti"}],
+zones:[{id:"z_sis",nodeId:"e_sis",termId:"SISTEMA_IOT"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_sen",nodeId:"e_sen",termId:"SENSOR"},{id:"z_cs",nodeId:"a_cs",termId:"COD_SENSOR"},{id:"z_ts",nodeId:"a_ts",termId:"TIPO_SENSOR"},{id:"z_va",nodeId:"a_va",termId:"VALOR_ACTUAL"},{id:"z_um",nodeId:"a_um",termId:"UMBRAL_MAXIMO"},{id:"z_ea",nodeId:"a_ea",termId:"ESTADO_ALERTA"},{id:"z_reg",nodeId:"r_reg",termId:"REGISTRA"},{id:"z_lec",nodeId:"e_lec",termId:"LECTURA"},{id:"z_nl",nodeId:"a_nl",termId:"NUM_LECTURA"},{id:"z_ti",nodeId:"a_ti",termId:"TIMESTAMP"}]},
+crowfoot:{entities:[{id:"ce_sen",label:"SENSOR",x:60,y:118,w:90,h:44},{id:"ce_lec",label:"LECTURA",x:390,y:118,w:80,h:44}],relations:[{id:"cr_reg",label:"REGISTRA",leftId:"ce_sen",rightId:"ce_lec",slots:[{id:"sl1",entityId:"ce_sen",side:"right",correct:"one"},{id:"sl2",entityId:"ce_lec",side:"left",correct:"many"}]}]}},
+
+{id:21,title:"Cuenta con Saldo Disponible",text:"Un BANCO gestiona CUENTAS con NUM_CUENTA, SALDO_TOTAL e IMPORTE_BLOQUEADO. El SALDO_DISPONIBLE se calcula restando el bloqueado al total. Las cuentas tienen TRANSACCIONES con NUM_TRANSACCION (discriminante), FECHA_TRANS e IMPORTE_TRANS.",
+terms:[{id:"banco",word:"BANCO",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"cuenta",word:"CUENTA",type:"entity"},{id:"num_cue",word:"NUM_CUENTA",type:"attr"},{id:"saldo_tot",word:"SALDO_TOTAL",type:"attr"},{id:"imp_blo",word:"IMPORTE_BLOQUEADO",type:"attr"},{id:"saldo_dis",word:"SALDO_DISPONIBLE",type:"deriv"},{id:"tiene",word:"TIENE",type:"relation"},{id:"transaccion",word:"TRANSACCION",type:"weak"},{id:"num_tra",word:"NUM_TRANSACCION",type:"attr"},{id:"fecha_tra",word:"FECHA_TRANS",type:"attr"},{id:"imp_tra",word:"IMPORTE_TRANS",type:"attr"}],
+diagram:{nodes:[{id:"e_ban",label:"BANCO",type:"entity",x:15,y:190,w:90,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:160,y:190,w:90,h:44},{id:"e_cue",label:"CUENTA",type:"entity",x:310,y:190,w:90,h:44},{id:"a_nc",label:"NUM_CUENTA",type:"attr",x:20,y:65,w:95,h:36},{id:"a_st",label:"SALDO_TOTAL",type:"attr",x:130,y:65,w:95,h:36},{id:"a_ib",label:"IMPORTE_BLOQUEADO",type:"attr",x:20,y:345,w:120,h:36},{id:"a_sd",label:"SALDO_DISPONIBLE",type:"deriv",x:155,y:345,w:110,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:420,y:190,w:75,h:44},{id:"e_tra",label:"TRANSACCION",type:"weak",x:420,y:305,w:105,h:44},{id:"a_nt",label:"NUM_TRANSACCION",type:"attr",x:420,y:55,w:110,h:36},{id:"a_ft",label:"FECHA_TRANS",type:"attr",x:420,y:370,w:95,h:36},{id:"a_it",label:"IMPORTE_TRANS",type:"attr",x:310,y:345,w:100,h:36}],
+edges:[{from:"e_ban",to:"r_ges"},{from:"r_ges",to:"e_cue"},{from:"e_cue",to:"a_nc"},{from:"e_cue",to:"a_st"},{from:"e_cue",to:"a_ib"},{from:"e_cue",to:"a_sd"},{from:"e_cue",to:"r_tie"},{from:"r_tie",to:"e_tra"},{from:"e_tra",to:"a_nt"},{from:"e_tra",to:"a_ft"},{from:"e_tra",to:"a_it"}],
+zones:[{id:"z_ban",nodeId:"e_ban",termId:"BANCO"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_cue",nodeId:"e_cue",termId:"CUENTA"},{id:"z_nc",nodeId:"a_nc",termId:"NUM_CUENTA"},{id:"z_st",nodeId:"a_st",termId:"SALDO_TOTAL"},{id:"z_ib",nodeId:"a_ib",termId:"IMPORTE_BLOQUEADO"},{id:"z_sd",nodeId:"a_sd",termId:"SALDO_DISPONIBLE"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_tra",nodeId:"e_tra",termId:"TRANSACCION"},{id:"z_nt",nodeId:"a_nt",termId:"NUM_TRANSACCION"},{id:"z_ft",nodeId:"a_ft",termId:"FECHA_TRANS"},{id:"z_it",nodeId:"a_it",termId:"IMPORTE_TRANS"}]},
+crowfoot:{entities:[{id:"ce_cue",label:"CUENTA",x:60,y:118,w:90,h:44},{id:"ce_tra",label:"TRANSACCION",x:380,y:118,w:105,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_cue",rightId:"ce_tra",slots:[{id:"sl1",entityId:"ce_cue",side:"right",correct:"one"},{id:"sl2",entityId:"ce_tra",side:"left",correct:"many"}]}]}},
+
+{id:22,title:"Inmueble con Superficie Útil",text:"Una AGENCIA gestiona INMUEBLES con COD_INMUEBLE, SUPERFICIE_TOTAL, PORCENTAJE_ZONAS_COMUNES y PRECIO_VENTA. La SUPERFICIE_UTIL se calcula restando las zonas comunes. Los inmuebles tienen HABITACIONES con NUM_HAB (discriminante) y TIPO_HAB.",
+terms:[{id:"agencia",word:"AGENCIA",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"inmueble",word:"INMUEBLE",type:"entity"},{id:"cod_inm",word:"COD_INMUEBLE",type:"attr"},{id:"sup_tot",word:"SUPERFICIE_TOTAL",type:"attr"},{id:"pct_zon",word:"PORCENTAJE_ZONAS_COMUNES",type:"attr"},{id:"precio",word:"PRECIO_VENTA",type:"attr"},{id:"sup_uti",word:"SUPERFICIE_UTIL",type:"deriv"},{id:"tiene",word:"TIENE",type:"relation"},{id:"habitacion",word:"HABITACION",type:"weak"},{id:"num_hab",word:"NUM_HAB",type:"attr"},{id:"tipo_hab",word:"TIPO_HAB",type:"attr"}],
+diagram:{nodes:[{id:"e_age",label:"AGENCIA",type:"entity",x:5,y:190,w:95,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:155,y:190,w:90,h:44},{id:"e_inm",label:"INMUEBLE",type:"entity",x:305,y:190,w:100,h:44},{id:"a_ci",label:"COD_INMUEBLE",type:"attr",x:15,y:70,w:100,h:36},{id:"a_st",label:"SUPERFICIE_TOTAL",type:"attr",x:130,y:70,w:110,h:36},{id:"a_pz",label:"PORCENTAJE_ZONAS_COMUNES",type:"attr",x:15,y:345,w:150,h:36},{id:"a_pv",label:"PRECIO_VENTA",type:"attr",x:180,y:345,w:100,h:36},{id:"a_su",label:"SUPERFICIE_UTIL",type:"deriv",x:295,y:345,w:105,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:425,y:190,w:75,h:44},{id:"e_hab",label:"HABITACION",type:"weak",x:425,y:305,w:100,h:44},{id:"a_nh",label:"NUM_HAB",type:"attr",x:425,y:60,w:80,h:36},{id:"a_th",label:"TIPO_HAB",type:"attr",x:425,y:370,w:80,h:36}],
+edges:[{from:"e_age",to:"r_ges"},{from:"r_ges",to:"e_inm"},{from:"e_inm",to:"a_ci"},{from:"e_inm",to:"a_st"},{from:"e_inm",to:"a_pz"},{from:"e_inm",to:"a_pv"},{from:"e_inm",to:"a_su"},{from:"e_inm",to:"r_tie"},{from:"r_tie",to:"e_hab"},{from:"e_hab",to:"a_nh"},{from:"e_hab",to:"a_th"}],
+zones:[{id:"z_age",nodeId:"e_age",termId:"AGENCIA"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_inm",nodeId:"e_inm",termId:"INMUEBLE"},{id:"z_ci",nodeId:"a_ci",termId:"COD_INMUEBLE"},{id:"z_st",nodeId:"a_st",termId:"SUPERFICIE_TOTAL"},{id:"z_pz",nodeId:"a_pz",termId:"PORCENTAJE_ZONAS_COMUNES"},{id:"z_pv",nodeId:"a_pv",termId:"PRECIO_VENTA"},{id:"z_su",nodeId:"a_su",termId:"SUPERFICIE_UTIL"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_hab",nodeId:"e_hab",termId:"HABITACION"},{id:"z_nh",nodeId:"a_nh",termId:"NUM_HAB"},{id:"z_th",nodeId:"a_th",termId:"TIPO_HAB"}]},
+crowfoot:{entities:[{id:"ce_inm",label:"INMUEBLE",x:60,y:118,w:100,h:44},{id:"ce_hab",label:"HABITACION",x:390,y:118,w:100,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_inm",rightId:"ce_hab",slots:[{id:"sl1",entityId:"ce_inm",side:"right",correct:"one"},{id:"sl2",entityId:"ce_hab",side:"left",correct:"many"}]}]}},
+
+{id:23,title:"Vehículo con Coste Total",text:"Una EMPRESA_LOGISTICA gestiona VEHÍCULOS con MATRICULA, MODELO, KM_ACTUALES y COSTE_KM. El COSTE_TOTAL_ESTIMADO se calcula. Los vehículos tienen REVISIONES con NUM_REVISION (discriminante) y FECHA_REVISION.",
+terms:[{id:"empresa",word:"EMPRESA_LOGISTICA",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"vehiculo",word:"VEHÍCULO",type:"entity"},{id:"matricula",word:"MATRICULA",type:"attr"},{id:"modelo",word:"MODELO",type:"attr"},{id:"km_act",word:"KM_ACTUALES",type:"attr"},{id:"coste_km",word:"COSTE_KM",type:"attr"},{id:"coste_tot",word:"COSTE_TOTAL_ESTIMADO",type:"deriv"},{id:"tiene",word:"TIENE",type:"relation"},{id:"revision",word:"REVISION",type:"weak"},{id:"num_rev",word:"NUM_REVISION",type:"attr"},{id:"fecha_rev",word:"FECHA_REVISION",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPRESA_LOGISTICA",type:"entity",x:5,y:190,w:140,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:200,y:190,w:90,h:44},{id:"e_veh",label:"VEHÍCULO",type:"entity",x:350,y:190,w:100,h:44},{id:"a_mat",label:"MATRICULA",type:"attr",x:10,y:70,w:90,h:36},{id:"a_mod",label:"MODELO",type:"attr",x:115,y:70,w:80,h:36},{id:"a_km",label:"KM_ACTUALES",type:"attr",x:10,y:345,w:95,h:36},{id:"a_ckm",label:"COSTE_KM",type:"attr",x:120,y:345,w:90,h:36},{id:"a_cte",label:"COSTE_TOTAL_ESTIMADO",type:"deriv",x:225,y:345,w:130,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:460,y:190,w:75,h:44},{id:"e_rev",label:"REVISION",type:"weak",x:460,y:305,w:90,h:44},{id:"a_nr",label:"NUM_REVISION",type:"attr",x:460,y:60,w:100,h:36},{id:"a_fr",label:"FECHA_REVISION",type:"attr",x:460,y:370,w:105,h:36}],
+edges:[{from:"e_emp",to:"r_ges"},{from:"r_ges",to:"e_veh"},{from:"e_veh",to:"a_mat"},{from:"e_veh",to:"a_mod"},{from:"e_veh",to:"a_km"},{from:"e_veh",to:"a_ckm"},{from:"e_veh",to:"a_cte"},{from:"e_veh",to:"r_tie"},{from:"r_tie",to:"e_rev"},{from:"e_rev",to:"a_nr"},{from:"e_rev",to:"a_fr"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPRESA_LOGISTICA"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_veh",nodeId:"e_veh",termId:"VEHÍCULO"},{id:"z_mat",nodeId:"a_mat",termId:"MATRICULA"},{id:"z_mod",nodeId:"a_mod",termId:"MODELO"},{id:"z_km",nodeId:"a_km",termId:"KM_ACTUALES"},{id:"z_ckm",nodeId:"a_ckm",termId:"COSTE_KM"},{id:"z_cte",nodeId:"a_cte",termId:"COSTE_TOTAL_ESTIMADO"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_rev",nodeId:"e_rev",termId:"REVISION"},{id:"z_nr",nodeId:"a_nr",termId:"NUM_REVISION"},{id:"z_fr",nodeId:"a_fr",termId:"FECHA_REVISION"}]},
+crowfoot:{entities:[{id:"ce_veh",label:"VEHÍCULO",x:60,y:118,w:100,h:44},{id:"ce_rev",label:"REVISION",x:390,y:118,w:90,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_veh",rightId:"ce_rev",slots:[{id:"sl1",entityId:"ce_veh",side:"right",correct:"one"},{id:"sl2",entityId:"ce_rev",side:"left",correct:"zero_many"}]}]}},
+
+{id:24,title:"Alumno con Nota Media",text:"Una UNIVERSIDAD tiene ALUMNOS con NIA, NOMBRE y CREDITOS_SUPERADOS. La NOTA_MEDIA se calcula como media ponderada. Los alumnos pertenecen a TITULACIONES con COD_TIT y NOMBRE_TIT. Las titulaciones contienen ASIGNATURAS_TIT con COD_ASIG_TIT (discriminante) y CREDITOS.",
+terms:[{id:"universidad",word:"UNIVERSIDAD",type:"entity"},{id:"alumno",word:"ALUMNO",type:"entity"},{id:"nia",word:"NIA",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"creditos_sup",word:"CREDITOS_SUPERADOS",type:"attr"},{id:"nota_med",word:"NOTA_MEDIA",type:"deriv"},{id:"pertenece",word:"PERTENECE",type:"relation"},{id:"titulacion",word:"TITULACION",type:"entity"},{id:"cod_tit",word:"COD_TIT",type:"attr"},{id:"nom_tit",word:"NOMBRE_TIT",type:"attr"},{id:"contiene",word:"CONTIENE",type:"relation"},{id:"asig_tit",word:"ASIGNATURA_TIT",type:"weak"},{id:"cod_asig",word:"COD_ASIG_TIT",type:"attr"},{id:"creditos",word:"CREDITOS",type:"attr"}],
+diagram:{nodes:[{id:"e_alu",label:"ALUMNO",type:"entity",x:25,y:190,w:100,h:44},{id:"a_nia",label:"NIA",type:"attr",x:25,y:65,w:60,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:100,y:65,w:75,h:36},{id:"a_crs",label:"CREDITOS_SUPERADOS",type:"attr",x:25,y:340,w:120,h:36},{id:"a_nm",label:"NOTA_MEDIA",type:"deriv",x:160,y:340,w:95,h:36},{id:"r_per",label:"PERTENECE",type:"relation",x:195,y:190,w:90,h:44},{id:"e_tit",label:"TITULACION",type:"entity",x:345,y:190,w:105,h:44},{id:"a_ct",label:"COD_TIT",type:"attr",x:350,y:65,w:80,h:36},{id:"a_nt",label:"NOMBRE_TIT",type:"attr",x:350,y:340,w:95,h:36},{id:"r_con",label:"CONTIENE",type:"relation",x:460,y:190,w:85,h:44},{id:"e_ast",label:"ASIGNATURA_TIT",type:"weak",x:460,y:305,w:105,h:44},{id:"a_ca",label:"COD_ASIG_TIT",type:"attr",x:460,y:60,w:100,h:36},{id:"a_cr",label:"CREDITOS",type:"attr",x:460,y:370,w:85,h:36}],
+edges:[{from:"e_alu",to:"r_per"},{from:"r_per",to:"e_tit"},{from:"e_alu",to:"a_nia"},{from:"e_alu",to:"a_nom"},{from:"e_alu",to:"a_crs"},{from:"e_alu",to:"a_nm"},{from:"e_tit",to:"a_ct"},{from:"e_tit",to:"a_nt"},{from:"e_tit",to:"r_con"},{from:"r_con",to:"e_ast"},{from:"e_ast",to:"a_ca"},{from:"e_ast",to:"a_cr"}],
+zones:[{id:"z_alu",nodeId:"e_alu",termId:"ALUMNO"},{id:"z_nia",nodeId:"a_nia",termId:"NIA"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_crs",nodeId:"a_crs",termId:"CREDITOS_SUPERADOS"},{id:"z_nm",nodeId:"a_nm",termId:"NOTA_MEDIA"},{id:"z_per",nodeId:"r_per",termId:"PERTENECE"},{id:"z_tit",nodeId:"e_tit",termId:"TITULACION"},{id:"z_ct",nodeId:"a_ct",termId:"COD_TIT"},{id:"z_nt",nodeId:"a_nt",termId:"NOMBRE_TIT"},{id:"z_con",nodeId:"r_con",termId:"CONTIENE"},{id:"z_ast",nodeId:"e_ast",termId:"ASIGNATURA_TIT"},{id:"z_ca",nodeId:"a_ca",termId:"COD_ASIG_TIT"},{id:"z_cr",nodeId:"a_cr",termId:"CREDITOS"}]},
+crowfoot:{entities:[{id:"ce_tit",label:"TITULACION",x:60,y:118,w:105,h:44},{id:"ce_ast",label:"ASIGNATURA_TIT",x:370,y:118,w:115,h:44}],relations:[{id:"cr_con",label:"CONTIENE",leftId:"ce_tit",rightId:"ce_ast",slots:[{id:"sl1",entityId:"ce_tit",side:"right",correct:"one"},{id:"sl2",entityId:"ce_ast",side:"left",correct:"many"}]}]}},
+
+{id:25,title:"Empleado con Salario Neto",text:"Una EMPRESA tiene EMPLEADOS con DNI, NOMBRE, SALARIO_BRUTO y PORCENTAJE_RETENCION. El SALARIO_NETO se calcula. Los empleados trabajan en PROYECTOS con COD_PROYECTO. Los proyectos tienen HITOS con NUM_HITO (discriminante) y DESCRIPCION.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"empleado",word:"EMPLEADO",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"sal_bru",word:"SALARIO_BRUTO",type:"attr"},{id:"pct_ret",word:"PORCENTAJE_RETENCION",type:"attr"},{id:"sal_net",word:"SALARIO_NETO",type:"deriv"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"proyecto",word:"PROYECTO",type:"entity"},{id:"cod_proy",word:"COD_PROYECTO",type:"attr"},{id:"tiene",word:"TIENE",type:"relation"},{id:"hito",word:"HITO",type:"weak"},{id:"num_hito",word:"NUM_HITO",type:"attr"},{id:"desc_hito",word:"DESCRIPCION",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPLEADO",type:"entity",x:25,y:190,w:110,h:44},{id:"a_dni",label:"DNI",type:"attr",x:25,y:65,w:65,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:105,y:65,w:80,h:36},{id:"a_sb",label:"SALARIO_BRUTO",type:"attr",x:25,y:340,w:100,h:36},{id:"a_pr",label:"PORCENTAJE_RETENCION",type:"attr",x:140,y:340,w:130,h:36},{id:"a_sn",label:"SALARIO_NETO",type:"deriv",x:285,y:340,w:100,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:210,y:190,w:90,h:44},{id:"e_pro",label:"PROYECTO",type:"entity",x:360,y:190,w:100,h:44},{id:"a_cp",label:"COD_PROYECTO",type:"attr",x:365,y:65,w:100,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:475,y:190,w:70,h:44},{id:"e_hit",label:"HITO",type:"weak",x:475,y:305,w:70,h:44},{id:"a_nh",label:"NUM_HITO",type:"attr",x:475,y:60,w:85,h:36},{id:"a_dh",label:"DESCRIPCION",type:"attr",x:475,y:370,w:100,h:36}],
+edges:[{from:"e_emp",to:"r_tra"},{from:"r_tra",to:"e_pro"},{from:"e_emp",to:"a_dni"},{from:"e_emp",to:"a_nom"},{from:"e_emp",to:"a_sb"},{from:"e_emp",to:"a_pr"},{from:"e_emp",to:"a_sn"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"r_tie"},{from:"r_tie",to:"e_hit"},{from:"e_hit",to:"a_nh"},{from:"e_hit",to:"a_dh"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPLEADO"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_sb",nodeId:"a_sb",termId:"SALARIO_BRUTO"},{id:"z_pr",nodeId:"a_pr",termId:"PORCENTAJE_RETENCION"},{id:"z_sn",nodeId:"a_sn",termId:"SALARIO_NETO"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_pro",nodeId:"e_pro",termId:"PROYECTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PROYECTO"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_hit",nodeId:"e_hit",termId:"HITO"},{id:"z_nh",nodeId:"a_nh",termId:"NUM_HITO"},{id:"z_dh",nodeId:"a_dh",termId:"DESCRIPCION"}]},
+crowfoot:{entities:[{id:"ce_emp",label:"EMPLEADO",x:50,y:118,w:110,h:44},{id:"ce_pro",label:"PROYECTO",x:380,y:118,w:100,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_emp",rightId:"ce_pro",slots:[{id:"sl1",entityId:"ce_emp",side:"right",correct:"many"},{id:"sl2",entityId:"ce_pro",side:"left",correct:"many"}]}]}},
+
+// ─── 26-30 EXPERTO: + atributo multivalor ───
+{id:26,title:"Persona con Teléfonos ★",text:"Una EMPRESA gestiona PERSONAS con DNI, NOMBRE y FECHA_NACIMIENTO. La EDAD se calcula desde la fecha de nacimiento. Una persona puede tener varios TELEFONOS. Las personas trabajan en DEPARTAMENTOS con COD_DEP. Los departamentos tienen OFICINAS con NUM_OFICINA (discriminante) y PLANTA.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"persona",word:"PERSONA",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"fecha_nac",word:"FECHA_NACIMIENTO",type:"attr"},{id:"edad",word:"EDAD",type:"deriv"},{id:"telefono",word:"TELEFONOS",type:"multi"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"depto",word:"DEPARTAMENTO",type:"entity"},{id:"cod_dep",word:"COD_DEP",type:"attr"},{id:"tiene",word:"TIENE",type:"relation"},{id:"oficina",word:"OFICINA",type:"weak"},{id:"num_ofi",word:"NUM_OFICINA",type:"attr"},{id:"planta",word:"PLANTA",type:"attr"}],
+diagram:{nodes:[{id:"e_per",label:"PERSONA",type:"entity",x:25,y:190,w:100,h:44},{id:"a_dni",label:"DNI",type:"attr",x:25,y:65,w:60,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:100,y:65,w:75,h:36},{id:"a_fnc",label:"FECHA_NACIMIENTO",type:"attr",x:25,y:345,w:120,h:36},{id:"a_eda",label:"EDAD",type:"deriv",x:160,y:345,w:70,h:36},{id:"a_tel",label:"TELEFONOS",type:"multi",x:210,y:65,w:90,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:200,y:190,w:90,h:44},{id:"e_dep",label:"DEPARTAMENTO",type:"entity",x:355,y:190,w:120,h:44},{id:"a_cd",label:"COD_DEP",type:"attr",x:360,y:65,w:80,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:485,y:190,w:70,h:44},{id:"e_ofi",label:"OFICINA",type:"weak",x:485,y:305,w:80,h:44},{id:"a_no",label:"NUM_OFICINA",type:"attr",x:485,y:60,w:90,h:36},{id:"a_pl",label:"PLANTA",type:"attr",x:485,y:370,w:75,h:36}],
+edges:[{from:"e_per",to:"r_tra"},{from:"r_tra",to:"e_dep"},{from:"e_per",to:"a_dni"},{from:"e_per",to:"a_nom"},{from:"e_per",to:"a_fnc"},{from:"e_per",to:"a_eda"},{from:"e_per",to:"a_tel"},{from:"e_dep",to:"a_cd"},{from:"e_dep",to:"r_tie"},{from:"r_tie",to:"e_ofi"},{from:"e_ofi",to:"a_no"},{from:"e_ofi",to:"a_pl"}],
+zones:[{id:"z_per",nodeId:"e_per",termId:"PERSONA"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_fnc",nodeId:"a_fnc",termId:"FECHA_NACIMIENTO"},{id:"z_eda",nodeId:"a_eda",termId:"EDAD"},{id:"z_tel",nodeId:"a_tel",termId:"TELEFONOS"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_dep",nodeId:"e_dep",termId:"DEPARTAMENTO"},{id:"z_cd",nodeId:"a_cd",termId:"COD_DEP"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_ofi",nodeId:"e_ofi",termId:"OFICINA"},{id:"z_no",nodeId:"a_no",termId:"NUM_OFICINA"},{id:"z_pl",nodeId:"a_pl",termId:"PLANTA"}]},
+crowfoot:{entities:[{id:"ce_per",label:"PERSONA",x:50,y:118,w:100,h:44},{id:"ce_dep",label:"DEPARTAMENTO",x:370,y:118,w:120,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_per",rightId:"ce_dep",slots:[{id:"sl1",entityId:"ce_per",side:"right",correct:"many"},{id:"sl2",entityId:"ce_dep",side:"left",correct:"one"}]}]}},
+
+{id:27,title:"Empleado con Idiomas ★",text:"Una EMPRESA tiene EMPLEADOS con DNI, NOMBRE, FECHA_CONTRATACION y SALARIO_BASE. La ANTIGUEDAD se calcula. Un empleado puede hablar varios IDIOMAS. Trabajan en PROYECTOS con COD_PROYECTO. Los proyectos tienen SPRINTS con NUM_SPRINT (discriminante) y NOMBRE_SPRINT.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"empleado",word:"EMPLEADO",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"fecha_con",word:"FECHA_CONTRATACION",type:"attr"},{id:"sal_base",word:"SALARIO_BASE",type:"attr"},{id:"antiguedad",word:"ANTIGUEDAD",type:"deriv"},{id:"idioma",word:"IDIOMAS",type:"multi"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"proyecto",word:"PROYECTO",type:"entity"},{id:"cod_proy",word:"COD_PROYECTO",type:"attr"},{id:"tiene",word:"TIENE",type:"relation"},{id:"sprint",word:"SPRINT",type:"weak"},{id:"num_spr",word:"NUM_SPRINT",type:"attr"},{id:"nom_spr",word:"NOMBRE_SPRINT",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPLEADO",type:"entity",x:25,y:190,w:110,h:44},{id:"a_dni",label:"DNI",type:"attr",x:25,y:65,w:60,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:100,y:65,w:75,h:36},{id:"a_fec",label:"FECHA_CONTRATACION",type:"attr",x:25,y:345,w:125,h:36},{id:"a_sal",label:"SALARIO_BASE",type:"attr",x:165,y:345,w:100,h:36},{id:"a_ant",label:"ANTIGUEDAD",type:"deriv",x:280,y:345,w:90,h:36},{id:"a_idi",label:"IDIOMAS",type:"multi",x:200,y:65,w:80,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:215,y:190,w:90,h:44},{id:"e_pro",label:"PROYECTO",type:"entity",x:370,y:190,w:100,h:44},{id:"a_cp",label:"COD_PROYECTO",type:"attr",x:375,y:65,w:100,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:485,y:190,w:70,h:44},{id:"e_spr",label:"SPRINT",type:"weak",x:485,y:305,w:75,h:44},{id:"a_ns",label:"NUM_SPRINT",type:"attr",x:485,y:55,w:90,h:36},{id:"a_nsp",label:"NOMBRE_SPRINT",type:"attr",x:485,y:370,w:100,h:36}],
+edges:[{from:"e_emp",to:"r_tra"},{from:"r_tra",to:"e_pro"},{from:"e_emp",to:"a_dni"},{from:"e_emp",to:"a_nom"},{from:"e_emp",to:"a_fec"},{from:"e_emp",to:"a_sal"},{from:"e_emp",to:"a_ant"},{from:"e_emp",to:"a_idi"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"r_tie"},{from:"r_tie",to:"e_spr"},{from:"e_spr",to:"a_ns"},{from:"e_spr",to:"a_nsp"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPLEADO"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_fec",nodeId:"a_fec",termId:"FECHA_CONTRATACION"},{id:"z_sal",nodeId:"a_sal",termId:"SALARIO_BASE"},{id:"z_ant",nodeId:"a_ant",termId:"ANTIGUEDAD"},{id:"z_idi",nodeId:"a_idi",termId:"IDIOMAS"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_pro",nodeId:"e_pro",termId:"PROYECTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PROYECTO"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_spr",nodeId:"e_spr",termId:"SPRINT"},{id:"z_ns",nodeId:"a_ns",termId:"NUM_SPRINT"},{id:"z_nsp",nodeId:"a_nsp",termId:"NOMBRE_SPRINT"}]},
+crowfoot:{entities:[{id:"ce_emp",label:"EMPLEADO",x:50,y:118,w:110,h:44},{id:"ce_pro",label:"PROYECTO",x:380,y:118,w:100,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_emp",rightId:"ce_pro",slots:[{id:"sl1",entityId:"ce_emp",side:"right",correct:"many"},{id:"sl2",entityId:"ce_pro",side:"left",correct:"many"}]}]}},
+
+{id:28,title:"Producto con Categorías ★",text:"Una TIENDA vende PRODUCTOS con COD_PRODUCTO, NOMBRE, PRECIO_BASE e IVA. El PRECIO_FINAL se calcula. Un producto puede tener varias CATEGORIAS. Los productos tienen VARIANTES con COD_VARIANTE (discriminante), COLOR y TALLA.",
+terms:[{id:"tienda",word:"TIENDA",type:"entity"},{id:"vende",word:"VENDE",type:"relation"},{id:"producto",word:"PRODUCTO",type:"entity"},{id:"cod_pro",word:"COD_PRODUCTO",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"prec_base",word:"PRECIO_BASE",type:"attr"},{id:"iva",word:"IVA",type:"attr"},{id:"prec_fin",word:"PRECIO_FINAL",type:"deriv"},{id:"categorias",word:"CATEGORIAS",type:"multi"},{id:"tiene",word:"TIENE",type:"relation"},{id:"variante",word:"VARIANTE",type:"weak"},{id:"cod_var",word:"COD_VARIANTE",type:"attr"},{id:"color",word:"COLOR",type:"attr"},{id:"talla",word:"TALLA",type:"attr"}],
+diagram:{nodes:[{id:"e_pro",label:"PRODUCTO",type:"entity",x:150,y:190,w:110,h:44},{id:"a_cp",label:"COD_PRODUCTO",type:"attr",x:25,y:65,w:100,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:145,y:65,w:75,h:36},{id:"a_pb",label:"PRECIO_BASE",type:"attr",x:25,y:345,w:95,h:36},{id:"a_iva",label:"IVA",type:"attr",x:135,y:345,w:60,h:36},{id:"a_pf",label:"PRECIO_FINAL",type:"deriv",x:210,y:345,w:95,h:36},{id:"a_cat",label:"CATEGORIAS",type:"multi",x:240,y:65,w:90,h:36},{id:"r_ven",label:"VENDE",type:"relation",x:25,y:190,w:80,h:44},{id:"e_tie",label:"TIENDA",type:"entity",x:25,y:305,w:80,h:44},{id:"r_tie",label:"TIENE",type:"relation",x:335,y:190,w:75,h:44},{id:"e_var",label:"VARIANTE",type:"weak",x:425,y:190,w:90,h:44},{id:"a_cv",label:"COD_VARIANTE",type:"attr",x:430,y:65,w:100,h:36},{id:"a_col",label:"COLOR",type:"attr",x:430,y:305,w:70,h:36},{id:"a_tal",label:"TALLA",type:"attr",x:430,y:370,w:65,h:36}],
+edges:[{from:"e_tie",to:"r_ven"},{from:"r_ven",to:"e_pro"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"a_nom"},{from:"e_pro",to:"a_pb"},{from:"e_pro",to:"a_iva"},{from:"e_pro",to:"a_pf"},{from:"e_pro",to:"a_cat"},{from:"e_pro",to:"r_tie"},{from:"r_tie",to:"e_var"},{from:"e_var",to:"a_cv"},{from:"e_var",to:"a_col"},{from:"e_var",to:"a_tal"}],
+zones:[{id:"z_pro",nodeId:"e_pro",termId:"PRODUCTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PRODUCTO"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_pb",nodeId:"a_pb",termId:"PRECIO_BASE"},{id:"z_iva",nodeId:"a_iva",termId:"IVA"},{id:"z_pf",nodeId:"a_pf",termId:"PRECIO_FINAL"},{id:"z_cat",nodeId:"a_cat",termId:"CATEGORIAS"},{id:"z_ven",nodeId:"r_ven",termId:"VENDE"},{id:"z_tie_e",nodeId:"e_tie",termId:"TIENDA"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_var",nodeId:"e_var",termId:"VARIANTE"},{id:"z_cv",nodeId:"a_cv",termId:"COD_VARIANTE"},{id:"z_col",nodeId:"a_col",termId:"COLOR"},{id:"z_tal",nodeId:"a_tal",termId:"TALLA"}]},
+crowfoot:{entities:[{id:"ce_pro",label:"PRODUCTO",x:60,y:118,w:110,h:44},{id:"ce_var",label:"VARIANTE",x:390,y:118,w:90,h:44}],relations:[{id:"cr_tie",label:"TIENE",leftId:"ce_pro",rightId:"ce_var",slots:[{id:"sl1",entityId:"ce_pro",side:"right",correct:"one"},{id:"sl2",entityId:"ce_var",side:"left",correct:"many"}]}]}},
+
+{id:29,title:"Usuario con Etiquetas ★★",text:"Una PLATAFORMA gestiona USUARIOS con ID_USUARIO, NOMBRE_USUARIO y FECHA_REGISTRO. El NUM_DIAS_ACTIVO se calcula. Un usuario puede tener varias ETIQUETAS. Los usuarios crean PUBLICACIONES con ID_PUBLICACION (discriminante), TITULO y NUM_LIKES (derivado).",
+terms:[{id:"plataforma",word:"PLATAFORMA",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"usuario",word:"USUARIO",type:"entity"},{id:"id_usu",word:"ID_USUARIO",type:"attr"},{id:"nom_usu",word:"NOMBRE_USUARIO",type:"attr"},{id:"fecha_reg",word:"FECHA_REGISTRO",type:"attr"},{id:"dias_act",word:"NUM_DIAS_ACTIVO",type:"deriv"},{id:"etiquetas",word:"ETIQUETAS",type:"multi"},{id:"crea",word:"CREA",type:"relation"},{id:"publicacion",word:"PUBLICACION",type:"weak"},{id:"id_pub",word:"ID_PUBLICACION",type:"attr"},{id:"titulo",word:"TITULO",type:"attr"},{id:"num_likes",word:"NUM_LIKES",type:"deriv"}],
+diagram:{nodes:[{id:"e_pla",label:"PLATAFORMA",type:"entity",x:5,y:190,w:115,h:44},{id:"r_ges",label:"GESTIONA",type:"relation",x:175,y:190,w:90,h:44},{id:"e_usu",label:"USUARIO",type:"entity",x:325,y:190,w:100,h:44},{id:"a_iu",label:"ID_USUARIO",type:"attr",x:10,y:65,w:90,h:36},{id:"a_nu",label:"NOMBRE_USUARIO",type:"attr",x:115,y:65,w:110,h:36},{id:"a_fr",label:"FECHA_REGISTRO",type:"attr",x:10,y:345,w:105,h:36},{id:"a_da",label:"NUM_DIAS_ACTIVO",type:"deriv",x:130,y:345,w:105,h:36},{id:"a_eti",label:"ETIQUETAS",type:"multi",x:250,y:65,w:90,h:36},{id:"r_cre",label:"CREA",type:"relation",x:440,y:190,w:70,h:44},{id:"e_pub",label:"PUBLICACION",type:"weak",x:440,y:305,w:105,h:44},{id:"a_ip",label:"ID_PUBLICACION",type:"attr",x:440,y:55,w:105,h:36},{id:"a_tit",label:"TITULO",type:"attr",x:440,y:370,w:75,h:36},{id:"a_nlk",label:"NUM_LIKES",type:"deriv",x:345,y:65,w:90,h:36}],
+edges:[{from:"e_pla",to:"r_ges"},{from:"r_ges",to:"e_usu"},{from:"e_usu",to:"a_iu"},{from:"e_usu",to:"a_nu"},{from:"e_usu",to:"a_fr"},{from:"e_usu",to:"a_da"},{from:"e_usu",to:"a_eti"},{from:"e_usu",to:"r_cre"},{from:"r_cre",to:"e_pub"},{from:"e_pub",to:"a_ip"},{from:"e_pub",to:"a_tit"},{from:"e_pub",to:"a_nlk"}],
+zones:[{id:"z_pla",nodeId:"e_pla",termId:"PLATAFORMA"},{id:"z_ges",nodeId:"r_ges",termId:"GESTIONA"},{id:"z_usu",nodeId:"e_usu",termId:"USUARIO"},{id:"z_iu",nodeId:"a_iu",termId:"ID_USUARIO"},{id:"z_nu",nodeId:"a_nu",termId:"NOMBRE_USUARIO"},{id:"z_fr",nodeId:"a_fr",termId:"FECHA_REGISTRO"},{id:"z_da",nodeId:"a_da",termId:"NUM_DIAS_ACTIVO"},{id:"z_eti",nodeId:"a_eti",termId:"ETIQUETAS"},{id:"z_cre",nodeId:"r_cre",termId:"CREA"},{id:"z_pub",nodeId:"e_pub",termId:"PUBLICACION"},{id:"z_ip",nodeId:"a_ip",termId:"ID_PUBLICACION"},{id:"z_tit",nodeId:"a_tit",termId:"TITULO"},{id:"z_nlk",nodeId:"a_nlk",termId:"NUM_LIKES"}]},
+crowfoot:{entities:[{id:"ce_usu",label:"USUARIO",x:60,y:118,w:100,h:44},{id:"ce_pub",label:"PUBLICACION",x:390,y:118,w:105,h:44}],relations:[{id:"cr_cre",label:"CREA",leftId:"ce_usu",rightId:"ce_pub",slots:[{id:"sl1",entityId:"ce_usu",side:"right",correct:"one"},{id:"sl2",entityId:"ce_pub",side:"left",correct:"many"}]}]}},
+
+{id:30,title:"Sistema Completo ★★★",text:"Una EMPRESA gestiona EMPLEADOS con DNI, NOMBRE, FECHA_ALTA y SALARIO_BRUTO. La ANTIGUEDAD y SALARIO_NETO se calculan. El empleado puede tener varios CERTIFICADOS. Trabajan en PROYECTOS con COD_PROYECTO y PRESUPUESTO; el COSTE_RESTANTE se calcula. Los proyectos tienen ENTREGABLES con NUM_ENTREGABLE (discriminante), DESCRIPCION y FECHA_ENTREGA.",
+terms:[{id:"empresa",word:"EMPRESA",type:"entity"},{id:"gestiona",word:"GESTIONA",type:"relation"},{id:"empleado",word:"EMPLEADO",type:"entity"},{id:"dni",word:"DNI",type:"attr"},{id:"nombre",word:"NOMBRE",type:"attr"},{id:"fecha_alt",word:"FECHA_ALTA",type:"attr"},{id:"sal_bru",word:"SALARIO_BRUTO",type:"attr"},{id:"antiguedad",word:"ANTIGUEDAD",type:"deriv"},{id:"sal_net",word:"SALARIO_NETO",type:"deriv"},{id:"certific",word:"CERTIFICADOS",type:"multi"},{id:"trabaja",word:"TRABAJA",type:"relation"},{id:"proyecto",word:"PROYECTO",type:"entity"},{id:"cod_proy",word:"COD_PROYECTO",type:"attr"},{id:"presupuesto",word:"PRESUPUESTO",type:"attr"},{id:"coste_res",word:"COSTE_RESTANTE",type:"deriv"},{id:"tiene",word:"TIENE",type:"relation"},{id:"entregable",word:"ENTREGABLE",type:"weak"},{id:"num_ent",word:"NUM_ENTREGABLE",type:"attr"},{id:"desc_ent",word:"DESCRIPCION",type:"attr"},{id:"fecha_ent",word:"FECHA_ENTREGA",type:"attr"}],
+diagram:{nodes:[{id:"e_emp",label:"EMPLEADO",type:"entity",x:15,y:195,w:110,h:44},{id:"a_dni",label:"DNI",type:"attr",x:15,y:65,w:60,h:36},{id:"a_nom",label:"NOMBRE",type:"attr",x:90,y:65,w:75,h:36},{id:"a_fal",label:"FECHA_ALTA",type:"attr",x:15,y:365,w:90,h:36},{id:"a_sb",label:"SALARIO_BRUTO",type:"attr",x:120,y:365,w:100,h:36},{id:"a_ant",label:"ANTIGUEDAD",type:"deriv",x:15,y:315,w:90,h:36},{id:"a_sn",label:"SALARIO_NETO",type:"deriv",x:120,y:315,w:95,h:36},{id:"a_cer",label:"CERTIFICADOS",type:"multi",x:185,y:65,w:100,h:36},{id:"r_tra",label:"TRABAJA",type:"relation",x:210,y:195,w:90,h:44},{id:"e_pro",label:"PROYECTO",type:"entity",x:365,y:195,w:100,h:44},{id:"a_cp",label:"COD_PROYECTO",type:"attr",x:370,y:65,w:100,h:36},{id:"a_pre",label:"PRESUPUESTO",type:"attr",x:370,y:315,w:100,h:36},{id:"a_cr",label:"COSTE_RESTANTE",type:"deriv",x:370,y:365,w:110,h:36},{id:"r_tie",label:"TIENE",type:"relation",x:480,y:195,w:75,h:44},{id:"e_ent",label:"ENTREGABLE",type:"weak",x:480,y:305,w:95,h:44},{id:"a_ne",label:"NUM_ENTREGABLE",type:"attr",x:480,y:60,w:100,h:36},{id:"a_de",label:"DESCRIPCION",type:"attr",x:480,y:375,w:90,h:36}],
+edges:[{from:"e_emp",to:"r_tra"},{from:"r_tra",to:"e_pro"},{from:"e_emp",to:"a_dni"},{from:"e_emp",to:"a_nom"},{from:"e_emp",to:"a_fal"},{from:"e_emp",to:"a_sb"},{from:"e_emp",to:"a_ant"},{from:"e_emp",to:"a_sn"},{from:"e_emp",to:"a_cer"},{from:"e_pro",to:"a_cp"},{from:"e_pro",to:"a_pre"},{from:"e_pro",to:"a_cr"},{from:"e_pro",to:"r_tie"},{from:"r_tie",to:"e_ent"},{from:"e_ent",to:"a_ne"},{from:"e_ent",to:"a_de"}],
+zones:[{id:"z_emp",nodeId:"e_emp",termId:"EMPLEADO"},{id:"z_dni",nodeId:"a_dni",termId:"DNI"},{id:"z_nom",nodeId:"a_nom",termId:"NOMBRE"},{id:"z_fal",nodeId:"a_fal",termId:"FECHA_ALTA"},{id:"z_sb",nodeId:"a_sb",termId:"SALARIO_BRUTO"},{id:"z_ant",nodeId:"a_ant",termId:"ANTIGUEDAD"},{id:"z_sn",nodeId:"a_sn",termId:"SALARIO_NETO"},{id:"z_cer",nodeId:"a_cer",termId:"CERTIFICADOS"},{id:"z_tra",nodeId:"r_tra",termId:"TRABAJA"},{id:"z_pro",nodeId:"e_pro",termId:"PROYECTO"},{id:"z_cp",nodeId:"a_cp",termId:"COD_PROYECTO"},{id:"z_pre",nodeId:"a_pre",termId:"PRESUPUESTO"},{id:"z_cr",nodeId:"a_cr",termId:"COSTE_RESTANTE"},{id:"z_tie",nodeId:"r_tie",termId:"TIENE"},{id:"z_ent",nodeId:"e_ent",termId:"ENTREGABLE"},{id:"z_ne",nodeId:"a_ne",termId:"NUM_ENTREGABLE"},{id:"z_de",nodeId:"a_de",termId:"DESCRIPCION"}]},
+crowfoot:{entities:[{id:"ce_emp",label:"EMPLEADO",x:50,y:118,w:110,h:44},{id:"ce_pro",label:"PROYECTO",x:380,y:118,w:100,h:44}],relations:[{id:"cr_tra",label:"TRABAJA",leftId:"ce_emp",rightId:"ce_pro",slots:[{id:"sl1",entityId:"ce_emp",side:"right",correct:"many"},{id:"sl2",entityId:"ce_pro",side:"left",correct:"many"}]}]}},
+];
+
+// ── GAME STATE ──
+let gs={idx:0,score:0,totalCorrect:0,totalWrong:0,phase:1,selectedTermId:null,p1Classifications:{},p1Checked:false,draggingId:null,selectedPalId:null,p2Placements:{},p2Checked:false,selectedCrow:null,p3Placements:{},p3Checked:false};
+
+// ── UTILS ──
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function cx(n){return n.x+n.w/2;}function cy(n){return n.y+n.h/2;}
+function typeDzClass(t){return{entity:'dz-entity',weak:'dz-weak',relation:'dz-rel',attr:'dz-attr',deriv:'dz-deriv',multi:'dz-multi'}[t]||'dz-attr';}
+function typePtClass(t){return{entity:'pt-entity',weak:'pt-weak',relation:'pt-rel',attr:'pt-attr',deriv:'pt-deriv',multi:'pt-multi'}[t]||'pt-attr';}
+function typeLabel(t){return{entity:'▣ Entidad',weak:'▣▣ E.Débil',relation:'◆ Relación',attr:'● Atributo',deriv:'◌ Derivado',multi:'◎ Multivalor'}[t]||t;}
+
+// ── PHASE 1 ──
+function renderP1(prob){
+  const area=document.getElementById('p1TokenArea');area.innerHTML='';
+  prob.terms.forEach(t=>{
+    const d=document.createElement('div');d.className='p1-token';d.id='tok_'+t.id;d.textContent=t.word;d.dataset.id=t.id;
+    d.onclick=()=>selectTerm(t.id);area.appendChild(d);
+  });
+  document.getElementById('classifiedList').innerHTML='';
+  document.getElementById('btnCheckP1').disabled=true;
+}
+function selectTerm(id){
+  if(gs.p1Checked||gs.p1Classifications[id]) return;
+  gs.selectedTermId=id;
+  document.querySelectorAll('.p1-token').forEach(t=>t.classList.toggle('selected',t.dataset.id===id));
+}
+function classifyAs(type){
+  if(!gs.selectedTermId||gs.p1Checked) return;
+  const id=gs.selectedTermId;gs.p1Classifications[id]=type;
+  const tok=document.getElementById('tok_'+id);if(tok){tok.classList.add('classified');tok.classList.remove('selected');}
+  gs.selectedTermId=null;
+  const prob=PROBLEMS[gs.idx];const term=prob.terms.find(t=>t.id===id);
+  const badge=document.createElement('div');badge.className='cl-badge cl-'+type;badge.textContent=term.word+': '+typeLabel(type);badge.id='badge_'+id;
+  document.getElementById('classifiedList').appendChild(badge);
+  document.getElementById('btnCheckP1').disabled=!prob.terms.every(t=>gs.p1Classifications[t.id]);
+}
+function checkPhase1(){
+  if(gs.p1Checked) return;gs.p1Checked=true;
+  const prob=PROBLEMS[gs.idx];let correct=0,wrong=0,errors=[];
+  prob.terms.forEach(t=>{
+    const placed=gs.p1Classifications[t.id];const ok=placed===t.type;
+    const badge=document.getElementById('badge_'+t.id);
+    if(badge) badge.style.outline=ok?'2px solid var(--accent3)':'2px solid var(--red)';
+    if(ok){correct++;gs.totalCorrect++;}else{wrong++;gs.totalWrong++;errors.push(`${t.word}: pusiste "${typeLabel(placed)}", correcto: "${typeLabel(t.type)}"`);}
+  });
+  const pts=correct*5;gs.score+=pts;document.getElementById('scoreVal').textContent=gs.score;
+  const fb=document.getElementById('p1Feedback');
+  fb.className='feedback-panel show '+(wrong===0?'feedback-correct':'feedback-wrong');
+  let html=`<div class="feedback-title">${wrong===0?`✅ ¡PERFECTO! +${pts} pts`:`⚠ ${correct}/${prob.terms.length} correctas — +${pts} pts`}</div>`;
+  if(errors.length){html+='<div class="feedback-items">';errors.slice(0,5).forEach(e=>html+=`<span class="fb-item fb-wrong">${e}</span>`);html+='</div>';}
+  fb.innerHTML=html;
+  if(wrong===0) confetti();
+  document.getElementById('btnCheckP1').textContent='→ PASAR A FASE 2';
+  document.getElementById('btnCheckP1').onclick=goPhase2;document.getElementById('btnCheckP1').disabled=false;
+}
+
+// ── PHASE 2 ──
+function goPhase2(){
+  gs.phase=2;gs.p2Placements={};gs.p2Checked=false;gs.draggingId=null;gs.selectedPalId=null;
+  document.getElementById('phase1Content').style.display='none';document.getElementById('phase2Content').style.display='block';
+  document.getElementById('phaseLabel').textContent='FASE 2';document.getElementById('st1').className='step done';document.getElementById('st2').className='step active';
+  document.getElementById('p2Feedback').className='feedback-panel';
+  document.getElementById('btnCheckP2').textContent='✔ COMPROBAR DIAGRAMA';document.getElementById('btnCheckP2').onclick=checkPhase2;document.getElementById('btnCheckP2').disabled=true;
+  renderP2(PROBLEMS[gs.idx]);
+}
+function renderP2(prob){
+  const svg=document.getElementById('diagramSvg');const container=document.getElementById('dropZonesContainer');
+  svg.innerHTML='';container.innerHTML='';
+  const nodeMap={};prob.diagram.nodes.forEach(n=>nodeMap[n.id]=n);
+  const eg=document.createElementNS('http://www.w3.org/2000/svg','g');
+  prob.diagram.edges.forEach(e=>{
+    const n1=nodeMap[e.from],n2=nodeMap[e.to];if(!n1||!n2) return;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',cx(n1));line.setAttribute('y1',cy(n1));line.setAttribute('x2',cx(n2));line.setAttribute('y2',cy(n2));
+    line.setAttribute('stroke','rgba(136,85,255,0.3)');line.setAttribute('stroke-width','1.5');eg.appendChild(line);
+  });
+  svg.appendChild(eg);
+  const svgW=560,svgH=400;function toP(v,t){return(v/t*100)+'%';}
+  prob.diagram.zones.forEach(zone=>{
+    const node=nodeMap[zone.nodeId];if(!node) return;
+    const div=document.createElement('div');
+    div.className='drop-zone '+typeDzClass(node.type);div.id='dz_'+zone.id;
+    div.style.left=toP(node.x,svgW);div.style.top=toP(node.y,svgH);div.style.width=toP(node.w,svgW);div.style.height=toP(node.h,svgH);
+    if(node.type==='entity'||node.type==='weak') div.style.borderRadius='4px';
+    else if(node.type==='relation') div.style.borderRadius='0';
+    else div.style.borderRadius='50%';
+    const lbl=document.createElement('div');lbl.className='zone-label';lbl.textContent='?';div.appendChild(lbl);
+    div.addEventListener('dragover',e=>{e.preventDefault();div.classList.add('drag-over');});
+    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop',e=>{e.preventDefault();div.classList.remove('drag-over');dropOnZone(zone.id);});
+    div.addEventListener('click',()=>{if(gs.draggingId)dropOnZone(zone.id);});
+    container.appendChild(div);
+  });
+  renderPalette(prob);
+}
+function renderPalette(prob){
+  const area=document.getElementById('paletteItems');area.innerHTML='';
+  const items=[...prob.diagram.zones].sort(()=>Math.random()-0.5);
+  items.forEach(zone=>{
+    const node=PROBLEMS[gs.idx].diagram.nodes.find(n=>n.id===zone.nodeId);if(!node) return;
+    const div=document.createElement('div');div.className='pal-tok '+typePtClass(node.type);div.id='pal_'+zone.id;
+    div.draggable=true;div.textContent=zone.termId;
+    div.addEventListener('dragstart',()=>{gs.draggingId=zone.termId;gs.selectedPalId=zone.termId;setTimeout(()=>div.style.opacity='0.4',0);});
+    div.addEventListener('dragend',()=>{div.style.opacity='';});
+    div.addEventListener('click',()=>{
+      if(gs.p2Checked) return;
+      const already=gs.selectedPalId===zone.termId;
+      document.querySelectorAll('.pal-tok').forEach(p=>p.style.outline='none');
+      if(already){gs.selectedPalId=null;gs.draggingId=null;}
+      else{gs.selectedPalId=zone.termId;gs.draggingId=zone.termId;div.style.outline='2px solid var(--crow-border)';}
+    });
+    area.appendChild(div);
+  });
+}
+function dropOnZone(zoneId){
+  const termId=gs.draggingId;if(!termId) return;
+  gs.draggingId=null;document.querySelectorAll('.pal-tok').forEach(p=>p.style.outline='none');gs.selectedPalId=null;
+  const prob=PROBLEMS[gs.idx];const zone=prob.diagram.zones.find(z=>z.id===zoneId);const node=prob.diagram.nodes.find(n=>n.id===zone?.nodeId);if(!zone||!node) return;
+  Object.keys(gs.p2Placements).forEach(zid=>{
+    if(gs.p2Placements[zid]===termId){
+      delete gs.p2Placements[zid];
+      const prev=document.getElementById('dz_'+zid);
+      if(prev){prev.className='drop-zone '+typeDzClass(node.type);const l=prev.querySelector('.zone-label');if(l)l.textContent='?';}
+      const pt=document.getElementById('pal_'+prob.diagram.zones.find(z=>z.id===zid)?.id);if(pt) pt.classList.remove('placed');
+    }
+  });
+  const prevTerm=gs.p2Placements[zoneId];if(prevTerm){const pt=document.getElementById('pal_'+prob.diagram.zones.find(z=>z.termId===prevTerm)?.id);if(pt) pt.classList.remove('placed');}
+  gs.p2Placements[zoneId]=termId;
+  const dzEl=document.getElementById('dz_'+zoneId);
+  if(dzEl){dzEl.className='drop-zone filled '+typeDzClass(node.type);const lbl=dzEl.querySelector('.zone-label');if(lbl)lbl.textContent=termId;}
+  const palEl=document.getElementById('pal_'+prob.diagram.zones.find(z=>z.termId===termId)?.id);if(palEl) palEl.classList.add('placed');
+  document.getElementById('btnCheckP2').disabled=prob.diagram.zones.some(z=>!gs.p2Placements[z.id]);
+}
+function clearP2(){
+  gs.p2Placements={};gs.draggingId=null;gs.selectedPalId=null;
+  document.querySelectorAll('.drop-zone').forEach(z=>{
+    const zoneId=z.id.replace('dz_','');const prob=PROBLEMS[gs.idx];const zone=prob.diagram.zones.find(zz=>zz.id===zoneId);const node=zone?prob.diagram.nodes.find(n=>n.id===zone.nodeId):null;
+    z.className='drop-zone'+(node?' '+typeDzClass(node.type):'');const l=z.querySelector('.zone-label');if(l)l.textContent='?';
+  });
+  document.querySelectorAll('.pal-tok').forEach(p=>{p.classList.remove('placed');p.style.outline='none';});
+  document.getElementById('btnCheckP2').disabled=true;
+}
+function checkPhase2(){
+  if(gs.p2Checked) return;gs.p2Checked=true;document.getElementById('btnClearP2').disabled=true;
+  const prob=PROBLEMS[gs.idx];let correct=0,wrong=0,errors=[];
+  prob.diagram.zones.forEach(zone=>{
+    const placed=gs.p2Placements[zone.id];const ok=placed===zone.termId;
+    const el=document.getElementById('dz_'+zone.id);if(el) el.classList.add(ok?'correct':'wrong');
+    if(ok){correct++;gs.totalCorrect++;}else{wrong++;gs.totalWrong++;errors.push(`${zone.termId}: "${placed||'?'}"`);}
+  });
+  const pts=correct*10;gs.score+=pts;document.getElementById('scoreVal').textContent=gs.score;
+  const fb=document.getElementById('p2Feedback');
+  fb.className='feedback-panel show '+(wrong===0?'feedback-correct':'feedback-wrong');
+  let html=`<div class="feedback-title">${wrong===0?`✅ ¡DIAGRAMA PERFECTO! +${pts} pts`:`⚠ ${correct}/${prob.diagram.zones.length} correctas — +${pts} pts`}</div>`;
+  if(errors.length){html+='<div class="feedback-items">';errors.slice(0,4).forEach(e=>html+=`<span class="fb-item fb-wrong">${e}</span>`);html+='</div>';}
+  fb.innerHTML=html;
+  if(wrong===0) confetti();
+  document.getElementById('btnCheckP2').textContent='→ PASAR A FASE 3';document.getElementById('btnCheckP2').onclick=goPhase3;document.getElementById('btnCheckP2').disabled=false;
+}
+
+// ── PHASE 3 ──
+function goPhase3(){
+  gs.phase=3;gs.p3Placements={};gs.p3Checked=false;gs.selectedCrow=null;
+  document.getElementById('phase2Content').style.display='none';document.getElementById('phase3Content').style.display='block';
+  document.getElementById('phaseLabel').textContent='FASE 3';document.getElementById('st2').className='step done';document.getElementById('st3').className='step active';
+  document.getElementById('p3Feedback').className='feedback-panel';document.getElementById('btnCheckP3').textContent='✔ COMPROBAR PATA DE CUERVO';
+  document.getElementById('btnCheckP3').onclick=checkPhase3;document.getElementById('btnCheckP3').disabled=true;document.getElementById('btnClearP3').disabled=false;
+  document.querySelectorAll('.crow-chip').forEach(c=>c.classList.remove('sel'));
+  renderCrowDiagram(PROBLEMS[gs.idx]);
+}
+function pickCrow(sym){
+  gs.selectedCrow=sym;document.querySelectorAll('.crow-chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('cc_'+sym).classList.add('sel');
+}
+function renderCrowDiagram(prob){
+  const cf=prob.crowfoot;const svg=document.getElementById('crowSvg');const sc=document.getElementById('crowSlotsContainer');
+  svg.innerHTML='';sc.innerHTML='';
+  const W=560,H=280;const entMap={};cf.entities.forEach(e=>entMap[e.id]=e);
+  cf.entities.forEach(e=>{
+    svg.innerHTML+=`<rect x="${e.x}" y="${e.y}" width="${e.w}" height="${e.h}" rx="4" fill="var(--col-entity)" stroke="var(--col-entity-b)" stroke-width="2"/>
+    <text x="${e.x+e.w/2}" y="${e.y+e.h/2+4}" text-anchor="middle" font-size="11" font-family="Nunito,sans-serif" font-weight="800" fill="var(--col-entity-t)">${e.label}</text>`;
+  });
+  cf.relations.forEach(rel=>{
+    const e1=entMap[rel.leftId],e2=entMap[rel.rightId];if(!e1||!e2) return;
+    const x1=e1.x+e1.w,y1=e1.y+e1.h/2,x2=e2.x,y2=e2.y+e2.h/2,mx=(x1+x2)/2;
+    svg.innerHTML+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(136,85,255,0.6)" stroke-width="2"/>
+    <text x="${mx}" y="${y1-10}" text-anchor="middle" font-size="10" font-family="Nunito,sans-serif" font-weight="800" fill="var(--crow-border)">${rel.label}</text>`;
+    rel.slots.forEach(slot=>{
+      const ent=entMap[slot.entityId];if(!ent) return;
+      let px=slot.side==='right'?ent.x+ent.w:ent.x,py=ent.y+ent.h/2;
+      const wrap=document.createElement('div');wrap.className='cf-slot';
+      wrap.style.left=(px/W*100)+'%';wrap.style.top=(py/H*100)+'%';
+      const inner=document.createElement('div');inner.className='cf-slot-inner';inner.id='cfslot_'+slot.id;inner.textContent='?';
+      inner.addEventListener('click',()=>placeCrow(slot.id));
+      wrap.appendChild(inner);sc.appendChild(wrap);
+    });
+  });
+}
+function placeCrow(slotId){
+  if(gs.p3Checked) return;
+  if(!gs.selectedCrow){document.querySelectorAll('.crow-chip').forEach(c=>{c.style.transform='scale(1.08)';setTimeout(()=>c.style.transform='',300);});return;}
+  gs.p3Placements[slotId]=gs.selectedCrow;
+  const inner=document.getElementById('cfslot_'+slotId);
+  if(inner){inner.className='cf-slot-inner filled-'+gs.selectedCrow;inner.textContent=CROW_SYMBOLS[gs.selectedCrow].label;}
+  const prob=PROBLEMS[gs.idx];const allSlots=prob.crowfoot.relations.flatMap(r=>r.slots);
+  document.getElementById('btnCheckP3').disabled=!allSlots.every(s=>gs.p3Placements[s.id]);
+}
+function clearP3(){
+  gs.p3Placements={};gs.selectedCrow=null;
+  document.querySelectorAll('.cf-slot-inner').forEach(el=>{el.className='cf-slot-inner';el.textContent='?';});
+  document.querySelectorAll('.crow-chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('btnCheckP3').disabled=true;
+}
+function checkPhase3(){
+  if(gs.p3Checked) return;gs.p3Checked=true;document.getElementById('btnClearP3').disabled=true;
+  const prob=PROBLEMS[gs.idx];const allSlots=prob.crowfoot.relations.flatMap(r=>r.slots);
+  let correct=0,wrong=0,errors=[];
+  allSlots.forEach(slot=>{
+    const placed=gs.p3Placements[slot.id]||'none';const ok=placed===slot.correct;
+    const inner=document.getElementById('cfslot_'+slot.id);
+    if(inner){inner.classList.add(ok?'cf-correct':'cf-wrong');if(!ok){inner.className='cf-slot-inner filled-'+slot.correct+' cf-wrong';inner.textContent=CROW_SYMBOLS[slot.correct].label;}}
+    if(ok){correct++;gs.totalCorrect++;}else{wrong++;gs.totalWrong++;errors.push(`${slot.side==='left'?'Izquierda':'Derecha'}: pusiste "${CROW_SYMBOLS[placed]?.label||'?'}", correcto: "${CROW_SYMBOLS[slot.correct].label}"`);}
+  });
+  const pts=correct*20;gs.score+=pts;document.getElementById('scoreVal').textContent=gs.score;
+  const fb=document.getElementById('p3Feedback');
+  fb.className='feedback-panel show '+(wrong===0?'feedback-correct':'feedback-wrong');
+  let html=`<div class="feedback-title">${wrong===0?`✅ ¡PATA DE CUERVO PERFECTA! +${pts} pts`:`⚠ ${correct}/${allSlots.length} correctas — +${pts} pts`}</div>`;
+  if(errors.length){html+='<div class="feedback-items">';errors.forEach(e=>html+=`<span class="fb-item fb-wrong">${e}</span>`);html+='</div>';html+=`<div class="fb-hint">💡 <strong>||</strong>=uno exacto · <strong>O|</strong>=cero/uno · <strong>≫|</strong>=uno/muchos · <strong>O≫</strong>=cero/muchos</div>`;}
+  fb.innerHTML=html;if(wrong===0) confetti();
+  const isLast=gs.idx>=PROBLEMS.length-1;
+  document.getElementById('btnCheckP3').textContent=isLast?'🏆 VER RESULTADOS':'→ SIGUIENTE EJERCICIO';
+  document.getElementById('btnCheckP3').onclick=nextProblem;document.getElementById('btnCheckP3').disabled=false;
+}
+
+// ── NAVIGATION ──
+function loadProblem(idx){
+  gs.idx=idx;gs.phase=1;gs.selectedTermId=null;gs.p1Classifications={};gs.p1Checked=false;
+  gs.draggingId=null;gs.selectedPalId=null;gs.p2Placements={};gs.p2Checked=false;gs.selectedCrow=null;gs.p3Placements={};gs.p3Checked=false;
+  const prob=PROBLEMS[idx];
+  document.getElementById('probNum').textContent=(idx+1)+'/'+PROBLEMS.length;
+  document.getElementById('progFill').style.width=(idx/PROBLEMS.length*100)+'%';
+  document.getElementById('probLabel').textContent='EJERCICIO '+(idx+1)+': '+prob.title.toUpperCase();
+  document.getElementById('probText').textContent=prob.text;
+  document.getElementById('phaseLabel').textContent='FASE 1';
+  document.getElementById('st1').className='step active';document.getElementById('st2').className='step';document.getElementById('st3').className='step';
+  document.getElementById('phase1Content').style.display='block';document.getElementById('phase2Content').style.display='none';document.getElementById('phase3Content').style.display='none';
+  document.getElementById('p1Feedback').className='feedback-panel';document.getElementById('p2Feedback').className='feedback-panel';document.getElementById('p3Feedback').className='feedback-panel';
+  document.getElementById('btnCheckP1').textContent='✔ COMPROBAR FASE 1';document.getElementById('btnCheckP1').onclick=checkPhase1;document.getElementById('btnCheckP1').disabled=true;
+  document.querySelectorAll('.crow-chip').forEach(c=>c.classList.remove('sel'));
+  renderP1(prob);
+}
+function nextProblem(){if(gs.idx>=PROBLEMS.length-1){showResults();return;}loadProblem(gs.idx+1);}
+function skipProblem(){if(!confirm('¿Saltar este ejercicio?')) return;nextProblem();}
+
+// ── RESULTS ──
+function showResults(){
+  document.getElementById('progFill').style.width='100%';showScreen('resultsScreen');
+  const pct=Math.round(gs.totalCorrect/(gs.totalCorrect+gs.totalWrong)*100)||0;
+  document.getElementById('resScore').textContent=gs.score;document.getElementById('rsCorrect').textContent=gs.totalCorrect;document.getElementById('rsWrong').textContent=gs.totalWrong;
+  let grade,gColor,emoji,title;
+  if(pct>=90){grade='⭐⭐⭐ MAESTRO CUERVO';gColor='var(--accent3)';emoji='🦅';title='¡DOMINAS LA PATA DE CUERVO!';}
+  else if(pct>=70){grade='⭐⭐ MUY BIEN';gColor='var(--crow-border)';emoji='🎉';title='¡EXCELENTE TRABAJO!';}
+  else if(pct>=50){grade='⭐ APROBADO';gColor='var(--warn)';emoji='💪';title='¡SIGUE PRACTICANDO!';}
+  else{grade='📚 A REPASAR';gColor='var(--red)';emoji='📖';title='REVISA LA TEORÍA';}
+  document.getElementById('resEmoji').textContent=emoji;document.getElementById('resTitle').textContent=title;
+  const g=document.getElementById('resGrade');g.textContent=grade;
+  g.style.cssText=`background:rgba(136,85,255,0.1);color:${gColor};border:1px solid ${gColor};padding:7px 16px;border-radius:6px;font-family:'Press Start 2P',monospace;font-size:8px;display:inline-block;`;
+  if(pct>=70) confetti();
+}
+
+// ── CONFETTI ──
+function confetti(){
+  const colors=['#8855ff','#ff4dff','#b3ff4d','#00e5ff','#ff3355'];
+  for(let i=0;i<55;i++){
+    const el=document.createElement('div');el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};--dur:${Math.random()*2+1.5}s;--delay:${Math.random()*0.8}s;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+  }
+}
+
+// ── INIT ──
+const initGs=()=>({idx:0,score:0,totalCorrect:0,totalWrong:0,phase:1,selectedTermId:null,p1Classifications:{},p1Checked:false,draggingId:null,selectedPalId:null,p2Placements:{},p2Checked:false,selectedCrow:null,p3Placements:{},p3Checked:false});
+document.getElementById('btnStart').onclick=()=>{gs=initGs();showScreen('gameScreen');loadProblem(0);};
+document.getElementById('btnRestart').onclick=()=>{gs=initGs();showScreen('gameScreen');loadProblem(0);};
+document.getElementById('btnMenu').onclick=()=>showScreen('startScreen');
+</script>
+</body>
+</html>
